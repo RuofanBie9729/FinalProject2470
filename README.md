@@ -21,7 +21,8 @@ As the name suggests, the fully convolutional networks only uses convolutional l
 A basic encoder-decoder model to implement image segmentation is to use convolutional layers asencoders and then use deconvolutional or convolution-transpose layers for decoders.  As the archi-tecture of the U-Net ([12]) presented in figure 5 shows, we intend to implement a simplified U-Netmodel as the encoder-decoder model.  For the encoder, we consider using three convolutional lay-ers.   All the three convolutional layers would have 10 filters with kernel size 3 and stride size 2.Then the three convolutional layers are followed by three convolution-transpose layers.  All of theconvolution-transpose layers would have 10 filters with kernel size 3 and stride size 2.
 
 #### Dilated Convolutional Models
-Due to the translation invariant property of convolutional layer, the FCN model is reliable in pre-diction the presence and roughly the position of objects in an image.  However, as a trade-off be-tween classification accuracy and localization accuracy, the FCN model might not be able to sketchthe  exact  the  outline  of  the  object.   [13]  proposed  to  add  a  fully  connected  CRF  layer  after  theconvolutional layers as presented in figure 6.   In this project,  we intend to add a fully connectedCRF layer to the FCN model described above.  By comparing the performance of FCN model withthis dilated convolutional model, we intend to explore how much improvement the fully connected CRF  can  bring  to  the  FCN  model.   Since  CRF  is  not  a  regular  tensorflow  layer,  we  intend  to  re-fer  to  code  from \link{http://warmspringwinds.github.io/tensorflow/tf-slim/2016/12/18/image-segmentation-with-tensorflow-using-cnns-and-conditional-random-fields/} to implement thismodelFigure 6:Architecture example of Deep Convolutional with CRF Networks
+Due to the translation invariant property of convolutional layer, the FCN model is reliable in pre-diction the presence and roughly the position of objects in an image.  However, as a trade-off be-tween classification accuracy and localization accuracy, the FCN model might not be able to sketchthe  exact  the  outline  of  the  object.   [13]  proposed  to  add  a  fully  connected  CRF  layer  after  theconvolutional layers as presented in figure 6.   In this project,  we intend to add a fully connectedCRF layer to the FCN model described above.  By comparing the performance of FCN model withthis dilated convolutional model, we intend to explore how much improvement the fully connected CRF  can  bring  to  the  FCN  model.   Since  CRF  is  not  a  regular  tensorflow  layer,  we  intend  to  re-fer  to  code  from 
+http://warmspringwinds.github.io/tensorflow/tf-slim/2016/12/18/image-segmentation-with-tensorflow-using-cnns-and-conditional-random-fields/ to implement thismodelFigure 6:Architecture example of Deep Convolutional with CRF Networks
 
 #### RNN Based Models
 
@@ -40,3 +41,41 @@ Pixel accuracy (PA) measures the proportion of correctly classified pixels. For 
 \end{equation}
 
 , where $p_{ij}$ is the number of pixels of classipredicted as belonging to classj.
+
+#### Mean Pixel Accuracy
+Mean pixel accuracy (MPA) extends PA to the proportion of correctly predicted pixels in a per-class manner, and then average over the total number of classes:
+\begin{equation}
+    MPA = \frac{1}{K+1}\sum_{i=0}^K\frac{p_{ii}}{\sum_{j=0}^Kp_{ij}}.
+\end{equation}
+
+#### Intersection over Union
+Pixel accuracy has the limitation such that it has bias in the presence of very imbalanced classes, while mean pixel accuracy is not suitable for data with strong background class. Another segmentation evaluation metric is the intersection over union (IoU). It is defined as the area of intersection between the predicted segmentation map A and the ground truth map B, divided by the area of the union between the two maps:
+\begin{equation}
+    IoU=\frac{|A\cap B|}{|A\cup B|}.
+\end{equation}
+The mean intersection over union (Mean-IoU) is defined as the average IoU over all classes.
+
+In this project, we would expect an accuracy of 50% for all models using the intersection over union metric as a baseline. Our goal is to implement 70-75% of accuracy for the four models. If these accuracy are easily achieved, we would consider to adjust model to achieve around 90% accuracy.
+
+### Ethics
+Magnetic resonance imaging (MRI) is a medical imaging technique that uses a magnetic field and computer-generated radio waves to create detailed images of the organs and tissues in patients' body. It's also an important tool for doctors to detect any abnormalities of the tissue or organ. Developing an image segmentation neural network that can reach high accuracy of detecting prostate can help to relief doctors' burden in manually checking the MRI and can increase efficiency in the medical system. However, developing such neural network doesn't necessarily mean physicians never have to give a look to MRI. The neural network results would justify the physician's diagnosis to secure the diagnosis process.
+
+### Division of labor
+Ruofan is responsible for running the FCN and dilated convolutional models. Ruya is responsible for running the encoder-decoder model and the RNN based model.
+
+### References
+
+[1]  Prashanth Rawla.   Epidemiology of prostate cancer.World journal of oncology,  10(2):63,2019. pages 3
+[2]  American Cancer Society. Cancer Statistics Center.  Tests to diagnose and stage prostate cancer.URLhttp://cancerstatisticscenter.cancer.org[Accessed8thNovember2021]. pages 3
+[3]  Nader Aldoj, Federico Biavati, Florian Michallek, Sebastian Stober, and Marc Dewey. Automaticprostate and prostate zones segmentation of magnetic resonance images using densenet-likeu-net.Scientific reports, 10(1):1–17, 2020. pages 3
+[4]  Shervin Minaee, Yuri Y Boykov, Fatih Porikli, Antonio J Plaza, Nasser Kehtarnavaz, and DemetriTerzopoulos. Image segmentation using deep learning: A survey.IEEE Transactions on PatternAnalysis and Machine Intelligence, 2021. pages 3, 8
+[5]  Tahereh Hassanzadeh, Leonard GC Hamey, and Kevin Ho-Shon. Convolutional neural networksfor  prostate  magnetic  resonance  image  segmentation.IEEE  Access,  7:36748–36760,  2019.pages 3
+[6]  Geert Litjens, Robert Toth, Wendy van de Ven, Caroline Hoeks, Sjoerd Kerkstra, Bram van Gin-neken, Graham Vincent, Gwenael Guillard, Neil Birbeck, Jindang Zhang, Robin Strand, FilipMalmberg,  Yangming  Ou,  Christos  Davatzikos,  Matthias  Kirschner,  Florian  Jung,  Jing  Yuan,Wu  Qiu,  Qinquan  Gao,  PhilipˆaEddieˆa  Edwards,  Bianca  Maan,  Ferdinand  van  der  Heijden,Soumya  Ghose,  Jhimli  Mitra,  Jason  Dowling,  Dean  Barratt,  Henkjan  Huisman,  and  AnantMadabhushi.   Evaluation of prostate segmentation algorithms for mri:  The promise12 chal-lenge.Medical Image Analysis, 18(2):359–373, 2014. ISSN 1361-8415. doi: https://doi.org/10.1016/j.media.2013.12.002. URLhttps://www.sciencedirect.com/science/article/pii/S1361841513001734. pages 3, 4
+[7]  Ophir Yaniv, Orith Portnoy, Amit Talmon, Nahum Kiryati, Eli Konen, and Arnaldo Mayer.  V-netlight-parameter-efficient 3-d convolutional neural network for prostate mri segmentation.  In2020 IEEE 17th International Symposium on Biomedical Imaging (ISBI), pages 442–445.IEEE, 2020. pages 3
+[8]  Fausto Milletari, Nassir Navab, and Seyed-Ahmad Ahmadi.  V-net:  Fully convolutional neuralnetworks for volumetric medical image segmentation.  In2016 fourth international confer-ence on 3D vision (3DV), pages 565–571. IEEE, 2016. pages 3
+[9]  Xiangxiang Qin.  Transfer learning with edge attention for prostate mri segmentation.arXivpreprint arXiv:1912.09847, 2019. pages 4
+[10]  Michela Antonelli, Annika Reinke, Spyridon Bakas, Keyvan Farahani, Bennett A Landman, GeertLitjens, Bjoern Menze, Olaf Ronneberger, Ronald M Summers, Bram van Ginneken, et al.  Themedical segmentation decathlon.arXiv preprint arXiv:2106.05735, 2021. pages 4
+[11]  Jonathan Long, Evan Shelhamer, and Trevor Darrell.  Fully convolutional networks for seman-tic segmentation.  InProceedings of the IEEE conference on computer vision and patternrecognition, pages 3431–3440, 2015. pages 5
+[12]  Olaf  Ronneberger,  Philipp  Fischer,  and  Thomas  Brox.    U-net:   Convolutional  networks  forbiomedical image segmentation.  InInternational Conference on Medical image computingand computer-assisted intervention, pages 234–241. Springer, 2015. pages 6
+[13]  Liang-Chieh Chen,  George Papandreou,  Iasonas Kokkinos,  Kevin Murphy,  and Alan L Yuille.Semantic image segmentation with deep convolutional nets and fully connected crfs.arXivpreprint arXiv:1412.7062, 2014. pages 7
+[14]  Xiaodan  Liang,  Xiaohui  Shen,  Jiashi  Feng,  Liang  Lin,  and  Shuicheng  Yan.   Semantic  objectparsing  with  graph  lstm.   InEuropean  Conference  on  Computer  Vision,  pages  125–143.Springer, 2016. pages 7

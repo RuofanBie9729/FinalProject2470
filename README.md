@@ -66,16 +66,29 @@ Ruofan is responsible for running the FCN and dilated convolutional models. Ruya
 ### References
 
 [1]  Prashanth Rawla.   Epidemiology of prostate cancer.World journal of oncology,  10(2):63,2019. pages 3
+
 [2]  American Cancer Society. Cancer Statistics Center.  Tests to diagnose and stage prostate cancer.URLhttp://cancerstatisticscenter.cancer.org[Accessed8thNovember2021]. pages 3
+
 [3]  Nader Aldoj, Federico Biavati, Florian Michallek, Sebastian Stober, and Marc Dewey. Automaticprostate and prostate zones segmentation of magnetic resonance images using densenet-likeu-net.Scientific reports, 10(1):1–17, 2020. pages 3
+
 [4]  Shervin Minaee, Yuri Y Boykov, Fatih Porikli, Antonio J Plaza, Nasser Kehtarnavaz, and DemetriTerzopoulos. Image segmentation using deep learning: A survey.IEEE Transactions on PatternAnalysis and Machine Intelligence, 2021. pages 3, 8
+
 [5]  Tahereh Hassanzadeh, Leonard GC Hamey, and Kevin Ho-Shon. Convolutional neural networksfor  prostate  magnetic  resonance  image  segmentation.IEEE  Access,  7:36748–36760,  2019.pages 3
+
 [6]  Geert Litjens, Robert Toth, Wendy van de Ven, Caroline Hoeks, Sjoerd Kerkstra, Bram van Gin-neken, Graham Vincent, Gwenael Guillard, Neil Birbeck, Jindang Zhang, Robin Strand, FilipMalmberg,  Yangming  Ou,  Christos  Davatzikos,  Matthias  Kirschner,  Florian  Jung,  Jing  Yuan,Wu  Qiu,  Qinquan  Gao,  PhilipˆaEddieˆa  Edwards,  Bianca  Maan,  Ferdinand  van  der  Heijden,Soumya  Ghose,  Jhimli  Mitra,  Jason  Dowling,  Dean  Barratt,  Henkjan  Huisman,  and  AnantMadabhushi.   Evaluation of prostate segmentation algorithms for mri:  The promise12 chal-lenge.Medical Image Analysis, 18(2):359–373, 2014. ISSN 1361-8415. doi: https://doi.org/10.1016/j.media.2013.12.002. URLhttps://www.sciencedirect.com/science/article/pii/S1361841513001734. pages 3, 4
+
 [7]  Ophir Yaniv, Orith Portnoy, Amit Talmon, Nahum Kiryati, Eli Konen, and Arnaldo Mayer.  V-netlight-parameter-efficient 3-d convolutional neural network for prostate mri segmentation.  In2020 IEEE 17th International Symposium on Biomedical Imaging (ISBI), pages 442–445.IEEE, 2020. pages 3
+
 [8]  Fausto Milletari, Nassir Navab, and Seyed-Ahmad Ahmadi.  V-net:  Fully convolutional neuralnetworks for volumetric medical image segmentation.  In2016 fourth international confer-ence on 3D vision (3DV), pages 565–571. IEEE, 2016. pages 3
+
 [9]  Xiangxiang Qin.  Transfer learning with edge attention for prostate mri segmentation.arXivpreprint arXiv:1912.09847, 2019. pages 4
+
 [10]  Michela Antonelli, Annika Reinke, Spyridon Bakas, Keyvan Farahani, Bennett A Landman, GeertLitjens, Bjoern Menze, Olaf Ronneberger, Ronald M Summers, Bram van Ginneken, et al.  Themedical segmentation decathlon.arXiv preprint arXiv:2106.05735, 2021. pages 4
+
 [11]  Jonathan Long, Evan Shelhamer, and Trevor Darrell.  Fully convolutional networks for seman-tic segmentation.  InProceedings of the IEEE conference on computer vision and patternrecognition, pages 3431–3440, 2015. pages 5
+
 [12]  Olaf  Ronneberger,  Philipp  Fischer,  and  Thomas  Brox.    U-net:   Convolutional  networks  forbiomedical image segmentation.  InInternational Conference on Medical image computingand computer-assisted intervention, pages 234–241. Springer, 2015. pages 6
+
 [13]  Liang-Chieh Chen,  George Papandreou,  Iasonas Kokkinos,  Kevin Murphy,  and Alan L Yuille.Semantic image segmentation with deep convolutional nets and fully connected crfs.arXivpreprint arXiv:1412.7062, 2014. pages 7
+
 [14]  Xiaodan  Liang,  Xiaohui  Shen,  Jiashi  Feng,  Liang  Lin,  and  Shuicheng  Yan.   Semantic  objectparsing  with  graph  lstm.   InEuropean  Conference  on  Computer  Vision,  pages  125–143.Springer, 2016. pages 7

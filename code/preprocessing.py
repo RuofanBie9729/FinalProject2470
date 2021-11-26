@@ -51,29 +51,24 @@ def get_data(input_file_path, output_file_path, aug=None):
     labels = np.load(output_file_path)
 
     ## data augmentation
-    if aug is not None:
-        for i in range(inputs.shape[2]):
-            angle = randint(0, 360)
-            axis = randint(0, 1)
+    if aug == "rotate":
+        rotation_inputs, rotation_labels = aug_rotation(inputs, labels)
+        inputs = np.concatenate([inputs, rotation_inputs], 2)
+        labels = np.concatenate([labels, rotation_labels], 2)
 
-            if aug == "rotate":
-                rotation_inputs, rotation_labels = aug_rotation(inputs, labels)
-                inputs = np.concatenate([inputs, rotation_inputs], 2)
-                labels = np.concatenate([labels, rotation_labels], 2)
+    if aug == "flip":
+        flip_inputs, flip_labels = aug_flip(inputs, labels)
+        inputs = np.concatenate([inputs, flip_inputs], 2)
+        labels = np.concatenate([labels, flip_labels], 2)
 
-            if aug == "flip":
-                flip_inputs, flip_labels = aug_flip(inputs, labels)
-                inputs = np.concatenate([inputs, flip_inputs], 2)
-                labels = np.concatenate([labels, flip_labels], 2)
+    if aug == "both":
+        rotation_inputs, rotation_labels = aug_rotation(inputs, labels)
+        inputs = np.concatenate([inputs, rotation_inputs], 2)
+        labels = np.concatenate([labels, rotation_labels], 2)
 
-            if aug == "both":
-                rotation_inputs, rotation_labels = aug_rotation(inputs, labels)
-                inputs = np.concatenate([inputs, rotation_inputs], 2)
-                labels = np.concatenate([labels, rotation_labels], 2)
-
-                flip_inputs, flip_labels = aug_flip(inputs, labels)
-                inputs = np.concatenate([inputs, flip_inputs], 2)
-                labels = np.concatenate([labels, flip_labels], 2)
+        flip_inputs, flip_labels = aug_flip(inputs, labels)
+        inputs = np.concatenate([inputs, flip_inputs], 2)
+        labels = np.concatenate([labels, flip_labels], 2)
 
     ## reshape and normalisation
     inputs = tf.transpose(inputs, perm=[2, 0, 1])
@@ -91,6 +86,6 @@ def get_data(input_file_path, output_file_path, aug=None):
     return inputs, labels
 
 if __name__ == '__main__':
-    inputs, labels = get_data("data/train_img.npy", "data/train_lab.npy", aug=None)
+    inputs, labels = get_data("data/train_img.npy", "data/train_lab.npy", aug="both")
     print(inputs.shape)
     print(labels.shape)

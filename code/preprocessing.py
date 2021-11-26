@@ -42,7 +42,7 @@ def get_data(input_file_path, output_file_path, aug=None):
     :param input_file_path: file path for the input images, something like 'data/train_img.npy'
     :param output_file_path: file path for the segmentation labels,
     something like 'data/train_lab.npy'
-    :param aug: data augmentation method, 'rotation', 'flip' or 'both'.
+    :param aug: data augmentation method, 'rotate', 'flip' or 'both'.
     :return: normalized tensor of inputs and tensor of labels, where
     inputs are of type np.float64 and has size (num_inputs, width, height) and labels
     has size (num_inputs, width, height)
@@ -63,12 +63,10 @@ def get_data(input_file_path, output_file_path, aug=None):
 
     if aug == "both":
         rotation_inputs, rotation_labels = aug_rotation(inputs, labels)
-        inputs = np.concatenate([inputs, rotation_inputs], 2)
-        labels = np.concatenate([labels, rotation_labels], 2)
-
         flip_inputs, flip_labels = aug_flip(inputs, labels)
-        inputs = np.concatenate([inputs, flip_inputs], 2)
-        labels = np.concatenate([labels, flip_labels], 2)
+
+        inputs = np.concatenate([inputs, rotation_inputs, flip_inputs], 2)
+        labels = np.concatenate([labels, rotation_labels, flip_labels], 2)
 
     ## reshape and normalisation
     inputs = tf.transpose(inputs, perm=[2, 0, 1])
@@ -86,6 +84,6 @@ def get_data(input_file_path, output_file_path, aug=None):
     return inputs, labels
 
 if __name__ == '__main__':
-    inputs, labels = get_data("data/train_img.npy", "data/train_lab.npy", aug="both")
+    inputs, labels = get_data("data/train_img.npy", "data/train_lab.npy", aug="flip")
     print(inputs.shape)
     print(labels.shape)

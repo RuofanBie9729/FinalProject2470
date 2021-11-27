@@ -1,7 +1,8 @@
-import numpy as np
-import tensorflow as tf
 from scipy.ndimage import rotate
 from random import randint
+
+import numpy as np
+import tensorflow as tf
 import cv2
 
 def aug_rotation(inputs, labels):
@@ -19,7 +20,7 @@ def aug_rotation(inputs, labels):
         rotation_inputs[:, :, i] = cv2.resize(rotation_input, (256, 256))
         rotation_labels[:, :, i] = cv2.resize(rotation_label, (256, 256))
 
-    return  rotation_inputs, rotation_labels
+        return rotation_inputs, rotation_labels
 
 def aug_flip(inputs, labels):
 
@@ -82,8 +83,3 @@ def get_data(input_file_path, output_file_path, aug=None):
     labels = tf.gather(labels, indices)
 
     return inputs, labels
-
-if __name__ == '__main__':
-    inputs, labels = get_data("data/train_img.npy", "data/train_lab.npy", aug="flip")
-    print(inputs.shape)
-    print(labels.shape)

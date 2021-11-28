@@ -1,6 +1,6 @@
 from preprocessing import get_data
 from metrics import IoU, pixel_acc, mean_pixel_acc, show_seg
-from tensorflow.keras.layers import Conv2D, MaxPool2D, UpSampling2D, concatenate
+from tensorflow.keras.layers import Conv2D, Conv2DTranspose
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.losses import SparseCategoricalCrossentropy
 
@@ -9,12 +9,53 @@ import numpy as np
 import math
 
 
+def maxpool2d_with_argmax(incoming, pool_size=2, stride=2, name='maxpool_with_argmax'):
+
+    x = incoming
+    filter_shape = [1, pool_size, pool_size, 1]
+    strides = [1, stride, stride, 1]
+
+    with tf.name_scope(name):
+        _, mask = tf.nn.max_pool_with_argmax(x, ksize=filter_shape, strides=strides, padding='SAME')
+        mask = tf.stop_gradient(mask)
+
+        pooled = tf.nn.max_pool(x, ksize=filter_shape, strides=strides, padding='SAME')
+
+    return pooled, mask
+
+
+def maxunpool2d(incoming, mask, stride=2, name='unpool'):
+
+    x = incoming
+
+    input_shape = incoming.get_shape().as_list()
+    strides = [1, stride, stride, 1]
+    output_shape = (input_shape[0], input_shape[1] * strides[1], input_shape[2] * strides[2], input_shape[3])
+
+    flat_output_shape = [output_shape[0], np.prod(output_shape[1:])]
+
+    with tf.name_scope(name):
+        flat_input_size = tf.size(x)
+        batch_range = tf.reshape(tf.range(output_shape[0], dtype=mask.dtype),
+                                 shape=[input_shape[0], 1, 1, 1])
+        b = tf.ones_like(mask) * batch_range
+        b = tf.reshape(b, [flat_input_size, 1])
+        mask_ = tf.reshape(mask, [flat_input_size, 1])
+        mask_ = tf.concat([b, mask_], 1)
+
+        x_ = tf.reshape(x, [flat_input_size])
+        ret = tf.scatter_nd(mask_, x_, shape=flat_output_shape)
+        ret = tf.reshape(ret, output_shape)
+
+    return ret
+
+
 class Model(tf.keras.Model):
     def __init__(self):
 
         super(Model, self).__init__()
 
-        self.batch_size = 64
+        self.batch_size = 16
         self.optimizer = Adam(learning_rate=1e-5)
         self.loss_list = []
 
@@ -28,50 +69,58 @@ class Model(tf.keras.Model):
 
         conv1 = Conv2D(64, 3, activation='relu', padding='same')(inputs)
         conv1 = Conv2D(64, 3, activation='relu', padding='same')(conv1)
-        pool1 = MaxPool2D()(conv1)
+        pool1, ind1 = maxpool2d_with_argmax(conv1, 2, 2)
 
         conv2 = Conv2D(128, 3, activation='relu', padding='same')(pool1)
         conv2 = Conv2D(128, 3, activation='relu', padding='same')(conv2)
-        pool2 = MaxPool2D()(conv2)
+        pool2, ind2 = maxpool2d_with_argmax(conv2)
 
         conv3 = Conv2D(256, 3, activation='relu', padding='same')(pool2)
         conv3 = Conv2D(256, 3, activation='relu', padding='same')(conv3)
-        pool3 = MaxPool2D()(conv3)
+        conv3 = Conv2D(256, 3, activation='relu', padding='same')(conv3)
+        pool3, ind3 = maxpool2d_with_argmax(conv3)
 
         conv4 = Conv2D(512, 3, activation='relu', padding='same')(pool3)
         conv4 = Conv2D(512, 3, activation='relu', padding='same')(conv4)
-        pool4 = MaxPool2D()(conv4)
+        conv4 = Conv2D(512, 3, activation='relu', padding='same')(conv4)
+        pool4, ind4 = maxpool2d_with_argmax(conv4)
 
-        conv5 = Conv2D(1024, 3, activation='relu', padding='same')(pool4)
-        conv5 = Conv2D(1024, 3, activation='relu', padding='same')(conv5)
-        up5 = UpSampling2D()(conv5)
-        up5 = Conv2D(512, 2, activation='relu', padding='same')(up5)
+        conv5 = Conv2D(512, 3, activation='relu', padding='same')(pool4)
+        conv5 = Conv2D(512, 3, activation='relu', padding='same')(conv5)
+        conv5 = Conv2D(512, 3, activation='relu', padding='same')(conv5)
+        pool5, ind5 = maxpool2d_with_argmax(conv5)
 
-        merge6 = concatenate([conv4, up5], 3)
-        conv6 = Conv2D(512, 3, activation='relu', padding='same')(merge6)
-        conv6 = Conv2D(512, 3, activation='relu', padding='same')(conv6)
-        up6 = UpSampling2D()(conv6)
-        up6 = Conv2D(256, 2, activation='relu', padding='same')(up6)
+        fc6 = Conv2D(4096, 8, activation='relu')(pool5)
+        fc7 = Conv2D(4096, 1, activation='relu')(fc6)
 
-        merge7 = concatenate([conv3, up6], 3)
-        conv7 = Conv2D(256, 3, activation='relu', padding='same')(merge7)
-        conv7 = Conv2D(256, 3, activation='relu', padding='same')(conv7)
-        up7 = UpSampling2D()(conv7)
-        up7 = Conv2D(128, 2, activation='relu', padding='same')(up7)
+        deconv8 = Conv2DTranspose(512, 8, activation='relu')(fc7)
+        unpool8 = maxunpool2d(deconv8, ind5)
 
-        merge8 = concatenate([conv2, up7], 3)
-        conv8 = Conv2D(128, 3, activation='relu', padding='same')(merge8)
-        conv8 = Conv2D(128, 3, activation='relu', padding='same')(conv8)
-        up8 = UpSampling2D()(conv8)
-        up8 = Conv2D(64, 2, activation='relu', padding='same')(up8)
+        deconv9 = Conv2DTranspose(512, 3, activation='relu', padding='same')(unpool8)
+        deconv9 = Conv2DTranspose(512, 3, activation='relu', padding='same')(deconv9)
+        deconv9 = Conv2DTranspose(512, 3, activation='relu', padding='same')(deconv9)
+        unpool9 = maxunpool2d(deconv9, ind4)
 
-        merge9 = concatenate([conv1, up8], 3)
-        conv9 = Conv2D(64, 3, activation='relu', padding='same')(merge9)
-        conv9 = Conv2D(64, 3, activation='relu', padding='same')(conv9)
+        deconv10 = Conv2DTranspose(512, 3, activation='relu', padding='same')(unpool9)
+        deconv10 = Conv2DTranspose(512, 3, activation='relu', padding='same')(deconv10)
+        deconv10 = Conv2DTranspose(256, 3, activation='relu', padding='same')(deconv10)
+        unpool10 = maxunpool2d(deconv10, ind3)
 
-        conv10 = Conv2D(3, 1, activation='softmax', padding='same')(conv9)
+        deconv11 = Conv2DTranspose(256, 3, activation='relu', padding='same')(unpool10)
+        deconv11 = Conv2DTranspose(256, 3, activation='relu', padding='same')(deconv11)
+        deconv11 = Conv2DTranspose(128, 3, activation='relu', padding='same')(deconv11)
+        unpool11 = maxunpool2d(deconv11, ind2)
 
-        return conv10
+        deconv12 = Conv2DTranspose(128, 3, activation='relu', padding='same')(unpool11)
+        deconv12 = Conv2DTranspose(64, 3, activation='relu', padding='same')(deconv12)
+        unpool12 = maxunpool2d(deconv12, ind1)
+
+        deconv13 = Conv2DTranspose(64, 3, activation='relu', padding='same')(unpool12)
+        deconv13 = Conv2DTranspose(64, 3, activation='relu', padding='same')(deconv13)
+
+        conv14 = Conv2D(3, 1, activation='softmax', padding='same')(deconv13)
+
+        return conv14
 
     def loss(self, probs, labels):
         """
@@ -148,15 +197,15 @@ def main():
     model = Model()
 
     # train
-    for i in range(20):
-        train(model, train_inputs, train_labels)
+    for i in range(1):
+        train(model, train_inputs[:16], train_labels[:16])
         print(f"Train Epoch: {i} \tLoss: {np.mean(model.loss_list):.6f}")
-        iou, acc, mean_acc = test(model, test_inputs, test_labels)
+        iou, acc, mean_acc = test(model, test_inputs[:16], test_labels[:16])
         print(f"--IoU: {iou:.6f}  --pixel accuracy: {acc:.6f}  --mean pixel accuracy: {mean_acc:.6f}")
 
     show_seg(model, test_inputs[:10], test_labels[:10])
 
-    model.save('UNet.h5')
+    model.save('DeconvNet.h5')
     print('model saved')
 
 

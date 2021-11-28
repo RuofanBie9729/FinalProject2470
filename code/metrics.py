@@ -2,6 +2,9 @@ from tensorflow.keras.metrics import MeanIoU
 
 import numpy as np
 import tensorflow as tf
+import matplotlib.gridspec as gridspec
+import matplotlib.pyplot as plt
+import os
 
 def IoU(labels, probs):
     """
@@ -63,3 +66,29 @@ def mean_pixel_acc(labels, probs):
     return np.mean([p0, p1, p2])
 
 
+def show_seg(model, inputs, labels):
+
+    num_obs = inputs.shape[0]
+
+    probs = model(inputs)
+    preds = tf.math.argmax(probs, axis=3)
+    preds = tf.cast(preds, tf.double)
+
+    images = tf.concat([tf.reshape(inputs, (num_obs, 256, 256)), labels, preds], axis=0)
+
+    fig = plt.figure(figsize=(3 * num_obs, num_obs))
+    gspec = gridspec.GridSpec(3, num_obs)
+    gspec.update(wspace=0.05, hspace=0.05)
+
+    for i in range(3 * num_obs):
+        ax = plt.subplot(gspec[i])
+        plt.axis("off")
+        ax.set_xticklabels([])
+        ax.set_yticklabels([])
+        ax.set_aspect("equal")
+        plt.imshow(images[i])
+
+    os.makedirs("outputs", exist_ok=True)
+    output_path = os.path.join("outputs", "seg_results.pdf")
+    plt.savefig(output_path, bbox_inches="tight")
+    plt.close(fig)

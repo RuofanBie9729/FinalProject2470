@@ -40,6 +40,7 @@ def get_data(input_file_path, output_file_path, aug=None):
     """
     Given two file paths, returns an array of normalized inputs (images) and
     an array of labels (images).
+    
     :param input_file_path: file path for the input images, something like 'data/train_img.npy'
     :param output_file_path: file path for the segmentation labels,
     something like 'data/train_lab.npy'

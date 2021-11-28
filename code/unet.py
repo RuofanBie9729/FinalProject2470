@@ -1,4 +1,5 @@
 from preprocessing import get_data
+from metrics import IoU, pixel_acc, mean_pixel_acc
 from tensorflow.keras.layers import Conv2D, MaxPool2D, UpSampling2D, concatenate
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.losses import SparseCategoricalCrossentropy
@@ -15,6 +16,7 @@ class Model(tf.keras.Model):
 
         self.batch_size = 64
         self.optimizer = Adam(learning_rate=1e-5)
+        self.loss_list = []
 
     def call(self, inputs):
         """
@@ -86,24 +88,19 @@ class Model(tf.keras.Model):
 
 
 def train(model, train_inputs, train_labels):
-    '''
-    Trains the model on all of the inputs and labels for one epoch. You should shuffle your inputs
-    and labels - ensure that they are shuffled in the same order using tf.gather or zipping.
-    To increase accuracy, you may want to use tf.image.random_flip_left_right on your
-    inputs before doing the forward pass. You should batch your inputs.
-
+    """
     :param model: the initialized model to use for the forward pass and backward pass
     :param train_inputs: train inputs (all inputs to use for training),
-    shape (num_inputs, width, height, num_channels)
+    shape (num_inputs, 256, 256, 1)
     :param train_labels: train labels (all labels to use for training),
-    shape (num_labels, num_classes)
-    :return: Optionally list of losses per batch to use for visualize_loss
-    '''
+    shape (num_labels, 256, 256)
+    :return: list of losses per batch
+    """
 
     batch_size = model.batch_size
     n_batch = math.ceil(len(train_inputs) / batch_size)
 
-    loss_list = []
+    model.loss_list = []
 
     for i in range(n_batch):
         starting_index = i * batch_size
@@ -113,60 +110,49 @@ def train(model, train_inputs, train_labels):
         with tf.GradientTape() as tape:
             probs = model(batch_inputs)
             loss = model.loss(probs, batch_labels)
-            print(loss)
-            loss_list.append(loss.numpy())
+            model.loss_list.append(loss.numpy())
 
         gradients = tape.gradient(loss, model.trainable_variables)
         model.optimizer.apply_gradients(zip(gradients, model.trainable_variables))
 
-    return loss_list
+    return None
 
 
 def test(model, test_inputs, test_labels):
     """
-    Tests the model on the test inputs and labels. You should NOT randomly
-    flip images or do any extra preprocessing.
+    Tests the model on the test inputs and labels.
 
     :param test_inputs: test data (all images to be tested),
-    shape (num_inputs, width, height, num_channels)
+    shape (num_inputs, 256, 256, 1)
     :param test_labels: test labels (all corresponding labels),
-    shape (num_labels, num_classes)
-    :return: test accuracy - this should be the average accuracy across
-    all batches
+    shape (num_labels, 256, 256)
+    :return: IoU, pixel accuracy and mean pixel accuracy
     """
 
     probs = model(test_inputs)
-    acc = model.accuracy(probs, test_labels)
+    iou = IoU(test_labels, probs)
+    acc = pixel_acc(test_labels, probs)
+    mean_acc = mean_pixel_acc(test_labels, probs)
 
-    return acc.numpy()
+    return iou, acc, mean_acc
+
 
 def main():
-    """
-    Read in CIFAR10 data (limited to 2 classes), initialize your model, and train and
-    test your model for a number of epochs. We recommend that you train for
-    10 epochs and at most 25 epochs.
-
-    CS1470 students should receive a final accuracy
-    on the testing examples for cat and dog of >=70%.
-
-    CS2470 students should receive a final accuracy
-    on the testing examples for cat and dog of >=75%.
-
-    :return: None
-    """
 
     train_inputs, train_labels = get_data('data/train_img.npy', 'data/train_lab.npy', aug='both')
-    train_inputs = tf.reshape(train_inputs, (train_inputs.shape[0], train_inputs.shape[1], train_inputs.shape[2], 1))
-    # test_inputs, test_labels = get_data('data/test_img.npy', 'data/test_lab.npy')
+    train_inputs = tf.reshape(train_inputs, (train_inputs.shape[0], 256, 256, 1))
+    test_inputs, test_labels = get_data('data/test_img.npy', 'data/test_lab.npy')
+    test_inputs = tf.reshape(test_inputs, (test_inputs.shape[0], 256, 256, 1))
 
     # create model
     model = Model()
 
     # train
     for i in range(5):
-        loss_list = train(model, train_inputs, train_labels)
-        print(np.mean(loss_list))
-
+        train(model, train_inputs[0:127], train_labels[0:127])
+        print(f"Train Epoch: {i} \tLoss: {np.mean(model.loss_list):.6f}")
+        iou, acc, mean_acc = test(model, test_inputs[0:127], test_labels[0:127])
+        print(f"--IoU: {iou:.6f}  --pixel accuracy: {acc:.6f}  --mean pixel accuracy: {mean_acc:.6f}")
 
 if __name__ == '__main__':
     main()

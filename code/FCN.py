@@ -68,5 +68,3 @@ class FCN(tf.keras.Model):
 
         pass
 
-    def accuracy(self, prbs, labels):
-      return pixel_acc(labels, prbs)

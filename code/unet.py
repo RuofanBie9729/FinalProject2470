@@ -1,4 +1,5 @@
 from preprocessing import get_data
+from FCN import FCN
 from metrics import IoU, pixel_acc, mean_pixel_acc
 from tensorflow.keras.layers import Conv2D, MaxPool2D, UpSampling2D, concatenate
 from tensorflow.keras.optimizers import Adam
@@ -137,7 +138,7 @@ def test(model, test_inputs, test_labels):
     return iou, acc, mean_acc
 
 
-def main():
+def main(is_fcn=None):
 
     train_inputs, train_labels = get_data('data/train_img.npy', 'data/train_lab.npy', aug='both')
     train_inputs = tf.reshape(train_inputs, (train_inputs.shape[0], 256, 256, 1))
@@ -145,7 +146,10 @@ def main():
     test_inputs = tf.reshape(test_inputs, (test_inputs.shape[0], 256, 256, 1))
 
     # create model
-    model = Model()
+    if is_fcn:
+        model = FCN()
+    else:
+        model = Model()
 
     # train
     for i in range(5):

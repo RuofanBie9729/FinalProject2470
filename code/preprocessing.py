@@ -45,9 +45,10 @@ def get_data(input_file_path, output_file_path, aug=None):
     something like 'data/train_lab.npy'
     :param aug: data augmentation method, 'rotate', 'flip' or 'both'.
     :return: normalized tensor of inputs and tensor of labels, where
-    inputs are of type np.float64 and has size (num_inputs, width, height) and labels
-    has size (num_inputs, width, height)
+    inputs are of type np.float64 and has size (num_inputs, 256, 256) and labels
+    has size (num_inputs, 256, 256)
     """
+
     inputs = np.load(input_file_path)
     labels = np.load(output_file_path)
 

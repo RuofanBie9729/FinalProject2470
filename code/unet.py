@@ -10,11 +10,7 @@ import math
 
 class Model(tf.keras.Model):
     def __init__(self):
-        """
-        This model class will contain the architecture for your CNN that
-        classifies images. We have left in variables in the constructor
-        for you to fill out, but you are welcome to change them if you'd like.
-        """
+
         super(Model, self).__init__()
 
         self.batch_size = 64
@@ -24,9 +20,8 @@ class Model(tf.keras.Model):
         """
         Runs a forward pass on an input batch of images.
 
-        :param inputs: images, shape of (num_inputs, 32, 32, 3); during training, the shape is (batch_size, 32, 32, 3)
-        :param is_testing: a boolean that should be set to True only when you're doing Part 2 of the assignment and this function is being called during testing
-        :return: logits - a matrix of shape (num_inputs, num_classes); during training, it would be (batch_size, 2)
+        :param inputs: images, shape of (num_inputs, 256, 256, 1); during training, the shape is (batch_size, 256, 256, 1)
+        :return: probs - a matrix of shape (num_inputs, 256, 256, 3); during training, it would be (batch_size, 256, 256, 3)
         """
 
         conv1 = Conv2D(64, 3, activation='relu', padding='same')(inputs)
@@ -76,34 +71,18 @@ class Model(tf.keras.Model):
 
         return conv10
 
-    def loss(self, preds, labels):
+    def loss(self, probs, labels):
         """
         Calculates the model cross-entropy loss after one forward pass.
 
-        :param preds: a matrix of shape (batch_size, width, height, 3)
-        containing the result of multiple convolution and feed forward layers
-        :param labels: during training, matrix of shape (batch_size, width, height) containing the train labels
+        :param probs: a matrix of shape (batch_size, 256, 256, 3)
+        :param labels: during training, matrix of shape (batch_size, 256, 256) containing the train labels
         :return: the loss of the model as a Tensor
         """
-        loss = SparseCategoricalCrossentropy()(labels, preds)
+
+        loss = SparseCategoricalCrossentropy()(labels, probs)
 
         return tf.reduce_mean(loss)
-
-    def accuracy(self, logits, labels):
-        """
-        Calculates the model's prediction accuracy by comparing
-        logits to correct labels – no need to modify this.
-
-        :param logits: a matrix of size (num_inputs, self.num_classes); during training, this will be (batch_size, self.num_classes)
-        containing the result of multiple convolution and feed forward layers
-        :param labels: matrix of size (num_labels, self.num_classes) containing the answers, during training, this will be (batch_size, self.num_classes)
-
-        NOTE: DO NOT EDIT
-
-        :return: the accuracy of the model as a Tensor
-        """
-        correct_predictions = tf.equal(tf.argmax(logits, 1), tf.argmax(labels, 1))
-        return tf.reduce_mean(tf.cast(correct_predictions, tf.float32))
 
 
 def train(model, train_inputs, train_labels):
@@ -132,8 +111,9 @@ def train(model, train_inputs, train_labels):
         batch_labels = train_labels[starting_index:starting_index + batch_size]
 
         with tf.GradientTape() as tape:
-            preds = model(batch_inputs)
-            loss = model.loss(preds, batch_labels)
+            probs = model(batch_inputs)
+            loss = model.loss(probs, batch_labels)
+            print(loss)
             loss_list.append(loss.numpy())
 
         gradients = tape.gradient(loss, model.trainable_variables)
@@ -154,13 +134,14 @@ def test(model, test_inputs, test_labels):
     :return: test accuracy - this should be the average accuracy across
     all batches
     """
-    preds = model(test_inputs)
-    acc = model.accuracy(preds, test_labels)
+
+    probs = model(test_inputs)
+    acc = model.accuracy(probs, test_labels)
 
     return acc.numpy()
 
 def main():
-    '''
+    """
     Read in CIFAR10 data (limited to 2 classes), initialize your model, and train and
     test your model for a number of epochs. We recommend that you train for
     10 epochs and at most 25 epochs.
@@ -172,7 +153,8 @@ def main():
     on the testing examples for cat and dog of >=75%.
 
     :return: None
-    '''
+    """
+
     train_inputs, train_labels = get_data('data/train_img.npy', 'data/train_lab.npy', aug='both')
     train_inputs = tf.reshape(train_inputs, (train_inputs.shape[0], train_inputs.shape[1], train_inputs.shape[2], 1))
     # test_inputs, test_labels = get_data('data/test_img.npy', 'data/test_lab.npy')

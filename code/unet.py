@@ -155,8 +155,9 @@ def main(is_fcn=None):
     for i in range(5):
         train(model, train_inputs[0:127], train_labels[0:127])
         print(f"Train Epoch: {i} \tLoss: {np.mean(model.loss_list):.6f}")
-        iou, acc, mean_acc = test(model, test_inputs[0:127], test_labels[0:127])
-        print(f"--IoU: {iou:.6f}  --pixel accuracy: {acc:.6f}  --mean pixel accuracy: {mean_acc:.6f}")
+        
+    iou, acc, mean_acc = test(model, test_inputs[0:127], test_labels[0:127])
+    print(f"--IoU: {iou:.6f}  --pixel accuracy: {acc:.6f}  --mean pixel accuracy: {mean_acc:.6f}")
 
 if __name__ == '__main__':
     main()

@@ -46,7 +46,6 @@ class FCN(tf.keras.Model):
         """
         FCNOutput = self.convnets(inputs)
         prbs = self.deconv(FCNOutput)
-        #prbs = tf.nn.softmax(logits)
         
         return prbs
     
@@ -124,22 +123,12 @@ def test(model, test_inputs, test_labels):
 
 
 def main():
-    """
-    Read in CIFAR10 data (limited to 2 classes), initialize your model, and train and
-    test your model for a number of epochs. We recommend that you train for
-    10 epochs and at most 25 epochs.
-    CS1470 students should receive a final accuracy
-    on the testing examples for cat and dog of >=70%.
-    CS2470 students should receive a final accuracy
-    on the testing examples for cat and dog of >=75%.
-    :return: None
-    """
+    
 
     train_inputs, train_labels = get_data('/content/train_img.npy', '/content/train_lab.npy', aug='both')
     train_inputs = tf.reshape(train_inputs, (train_inputs.shape[0], train_inputs.shape[1], train_inputs.shape[2], 1))
     test_inputs, test_labels = get_data('/content/test_img.npy', '/content/test_lab.npy')
     test_inputs = tf.reshape(test_inputs, (test_inputs.shape[0], test_inputs.shape[1], test_inputs.shape[2], 1))
-    # test_inputs, test_labels = get_data('data/test_img.npy', 'data/test_lab.npy')
 
     # create model
     model = FCN()

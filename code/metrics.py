@@ -6,6 +6,7 @@ import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 import os
 
+
 def IoU(labels, probs):
     """
     Calculates the model's prediction intersection over union by comparing
@@ -63,7 +64,7 @@ def mean_pixel_acc(labels, probs):
 
     mask0 = tf.where(labels == 0, 1, 0)
     mask1 = tf.where(labels == 1, 1, 0)
-    mask2 = tf.where(labels == 2, 1, 0)
+    # mask2 = tf.where(labels==2, 1, 0)
 
     p0 = tf.reduce_sum(tf.math.multiply(true_preds, mask0), axis=1) / tf.reduce_sum(mask0, axis=1)
     p0_not_nan = tf.dtypes.cast(tf.math.logical_not(tf.math.is_nan(p0)), dtype=tf.float64)
@@ -75,16 +76,15 @@ def mean_pixel_acc(labels, probs):
     p1 = tf.math.multiply_no_nan(p1, p1_not_nan)
     p1 = tf.reduce_mean(p1).numpy()
 
-    p2 = tf.reduce_sum(tf.math.multiply(true_preds, mask2), axis=1) / tf.reduce_sum(mask2, axis=1)
-    p2_not_nan = tf.dtypes.cast(tf.math.logical_not(tf.math.is_nan(p2)), dtype=tf.float64)
-    p2 = tf.math.multiply_no_nan(p2, p2_not_nan)
-    p2 = tf.reduce_mean(p2).numpy()
+    # p2 = tf.reduce_sum(tf.math.multiply(true_preds, mask2), axis=1) / tf.reduce_sum(mask2, axis=1)
+    # p2_not_nan = tf.dtypes.cast(tf.math.logical_not(tf.math.is_nan(p2)), dtype=tf.float64)
+    # p2 = tf.math.multiply_no_nan(p2, p2_not_nan)
+    # p2 = tf.reduce_mean(p2).numpy()
 
-    return np.mean([p0, p1, p2])
+    return np.mean([p0, p1])
 
 
-def show_seg(model, inputs, labels):
-
+def show_seg(model, inputs, labels, model_name):
     num_obs = inputs.shape[0]
 
     probs = model(inputs)
@@ -106,6 +106,6 @@ def show_seg(model, inputs, labels):
         plt.imshow(images[i])
 
     os.makedirs("outputs", exist_ok=True)
-    output_path = os.path.join("outputs", "seg_results.pdf")
+    output_path = os.path.join("outputs", model_name + "_seg_results.pdf")
     plt.savefig(output_path, bbox_inches="tight")
     plt.close(fig)

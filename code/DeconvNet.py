@@ -178,12 +178,24 @@ def test(model, test_inputs, test_labels):
     :return: IoU, pixel accuracy and mean pixel accuracy
     """
 
-    probs = model(test_inputs)
-    iou = IoU(test_labels, probs)
-    acc = pixel_acc(test_labels, probs)
-    mean_acc = mean_pixel_acc(test_labels, probs)
+    batch_size = model.batch_size
+    n_batch = math.ceil(len(test_inputs) / batch_size)
 
-    return iou, acc, mean_acc
+    iou = 0
+    acc = 0
+    mean_acc = 0
+
+    for i in range(n_batch):
+        starting_index = i * batch_size
+        batch_inputs = test_inputs[starting_index:starting_index + batch_size]
+        batch_labels = test_labels[starting_index:starting_index + batch_size]
+
+        probs = model(batch_inputs)
+        iou += IoU(batch_labels, probs).numpy() * len(batch_inputs)
+        acc += pixel_acc(batch_labels, probs) * len(batch_inputs)
+        mean_acc += mean_pixel_acc(batch_labels, probs) * len(batch_inputs)
+
+    return iou / len(test_inputs), acc / len(test_inputs), mean_acc / len(test_inputs)
 
 
 def main():

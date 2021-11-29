@@ -10,25 +10,26 @@ import numpy as np
 import random
 import math
 
+
 class FCN(tf.keras.Model):
     def __init__(self):
         """
-        This model class will contain the architecture for our FCN that 
+        This model class will contain the architecture for our FCN that
         implements image segmentation.
         """
         super(FCN, self).__init__()
-        
-        self.batch_size=100
+
+        self.batch_size = 100
         # Initialize convolutional layers and deconvolutional layer
         self.convnets = tf.keras.Sequential()
         self.deconv = tf.keras.Sequential()
-        self.optimizer = tf.keras.optimizers.Adam(learning_rate=0.001)
-        
+        self.optimizer = tf.keras.optimizers.Adam(learning_rate=1e-5)
+
         self.convnets.add(Conv2D(2, 3, activation='relu'))
         self.convnets.add(Conv2D(2, 3, activation='relu'))
         self.convnets.add(Conv2D(4, 3, activation='relu'))
         self.convnets.add(Conv2D(4, 3, activation='relu'))
-        #self.convnets.add(tf.keras.layers.MaxPooling2D())
+        # self.convnets.add(tf.keras.layers.MaxPooling2D())
         self.convnets.add(Conv2D(8, 3, activation='relu'))
         self.convnets.add(Conv2D(8, 3, activation='relu'))
         self.convnets.add(Conv2D(8, 3, activation='relu'))
@@ -40,33 +41,33 @@ class FCN(tf.keras.Model):
     def call(self, inputs):
         """
         Runs a forward pass on an input batch of images.
-        
+
         :param inputs: images, shape of (num_inputs, 256, 256, 1)
         :return: logits - Flatten predictied image, a matrix of shape (num_inputs, 256*256)
         """
         FCNOutput = self.convnets(inputs)
         prbs = self.deconv(FCNOutput)
-        
+
         return prbs
-    
-        
+
         pass
 
     def loss(self, prbs, labels):
         """
         Calculates the model cross-entropy loss after one forward pass.
         Softmax is applied in this function.
-        
-        :param logits: during training, a matrix of shape (batch_size, self.num_classes) 
+
+        :param logits: during training, a matrix of shape (batch_size, self.num_classes)
         containing the result of multiple convolution and feed forward layers
         :param labels: during training, matrix of shape (batch_size, self.num_classes) containing the train labels
         :return: the loss of the model as a Tensor
         """
         scce = tf.keras.losses.SparseCategoricalCrossentropy()
-        
+
         return tf.math.reduce_mean(scce(labels, prbs))
 
         pass
+
 
 def train(model, train_inputs, train_labels):
     '''
@@ -123,11 +124,11 @@ def test(model, test_inputs, test_labels):
 
 
 def main():
-    
-
-    train_inputs, train_labels = get_data('/content/train_img.npy', '/content/train_lab.npy', aug='both')
-    train_inputs = tf.reshape(train_inputs, (train_inputs.shape[0], train_inputs.shape[1], train_inputs.shape[2], 1))
-    test_inputs, test_labels = get_data('/content/test_img.npy', '/content/test_lab.npy')
+    train_inputs, train_labels = get_data('/gdrive/My Drive/CSCI2470 FinalProject Dataset/train_img.npy',
+                                          '/gdrive/My Drive/CSCI2470 FinalProject Dataset/train_lab.npy')
+    train_inputs = tf.reshape(train_inputs, (train_inputs.shape[0], 256, 256, 1))
+    test_inputs, test_labels = get_data('/gdrive/My Drive/CSCI2470 FinalProject Dataset/test_img.npy',
+                                        '/gdrive/My Drive/CSCI2470 FinalProject Dataset/test_lab.npy')
     test_inputs = tf.reshape(test_inputs, (test_inputs.shape[0], test_inputs.shape[1], test_inputs.shape[2], 1))
 
     # create model
@@ -142,7 +143,8 @@ def main():
     print(acc)
     print(iou)
     print(mean_acc)
-    #show_seg(model, test_inputs, test_labels)
+    show_seg(model, test_inputs[:10], test_labels[:10], 'fcn')
+
 
 if __name__ == '__main__':
     main()

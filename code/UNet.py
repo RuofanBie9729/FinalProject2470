@@ -1,5 +1,6 @@
 from preprocessing import get_data
 from metrics import IoU, pixel_acc, mean_pixel_acc, show_seg
+from tensorflow.keras import Sequential
 from tensorflow.keras.layers import Conv2D, MaxPool2D, UpSampling2D, concatenate
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.losses import SparseCategoricalCrossentropy
@@ -14,9 +15,44 @@ class Model(tf.keras.Model):
 
         super(Model, self).__init__()
 
-        self.batch_size = 20
-        self.optimizer = Adam(learning_rate=1e-5)
+        self.batch_size = 32
+        self.optimizer = Adam(1e-5)
         self.loss_list = []
+
+        self.encoder1 = self.block(16)
+        self.encoder2 = self.block(32, max_pool=True)
+
+        self.decoder1 = self.block(64, max_pool=True, up_sample=True)
+        self.decoder2 = self.block(32, up_sample=True)
+
+        # self.encoder1 = self.block(2)
+        # self.encoder2 = self.block(4, max_pool=True)
+        # self.encoder3 = self.block(8, max_pool=True)
+
+        # self.decoder1 = self.block(16, max_pool=True, up_sample=True)
+        # self.decoder2 = self.block(8, up_sample=True)
+        # self.decoder3 = self.block(4, up_sample=True)
+
+        self.output_prob = self.block(16, output=True)
+
+    def block(self, filters, max_pool=False, up_sample=False, output=False):
+
+        net_block = Sequential()
+
+        if max_pool:
+            net_block.add(MaxPool2D())
+
+        net_block.add(Conv2D(filters, 3, activation='relu', padding='same'))
+        net_block.add(Conv2D(filters, 3, activation='relu', padding='same'))
+
+        if up_sample:
+            net_block.add(UpSampling2D())
+            net_block.add(Conv2D(filters / 2, 2, activation='relu', padding='same'))
+
+        if output:
+            net_block.add(Conv2D(2, 1, activation='softmax', padding='same'))
+
+        return net_block
 
     def call(self, inputs):
         """
@@ -26,52 +62,33 @@ class Model(tf.keras.Model):
         :return: probs - a matrix of shape (num_inputs, 256, 256, 3); during training, it would be (batch_size, 256, 256, 3)
         """
 
-        conv1 = Conv2D(32, 3, activation='relu', padding='same')(inputs)
-        conv1 = Conv2D(32, 3, activation='relu', padding='same')(conv1)
-        pool1 = MaxPool2D()(conv1)
+        encode1 = self.encoder1(inputs)
+        encode2 = self.encoder2(encode1)
 
-        conv2 = Conv2D(64, 3, activation='relu', padding='same')(pool1)
-        conv2 = Conv2D(64, 3, activation='relu', padding='same')(conv2)
-        pool2 = MaxPool2D()(conv2)
+        decode1 = self.decoder1(encode2)
+        merge1 = concatenate([encode2, decode1], 3)
 
-        conv3 = Conv2D(128, 3, activation='relu', padding='same')(pool2)
-        conv3 = Conv2D(128, 3, activation='relu', padding='same')(conv3)
-        pool3 = MaxPool2D()(conv3)
+        decode2 = self.decoder2(merge1)
+        merge2 = concatenate([encode1, decode2], 3)
 
-        conv4 = Conv2D(256, 3, activation='relu', padding='same')(pool3)
-        conv4 = Conv2D(256, 3, activation='relu', padding='same')(conv4)
-        pool4 = MaxPool2D()(conv4)
+        out = self.output_prob(merge2)
 
-        conv5 = Conv2D(512, 3, activation='relu', padding='same')(pool4)
-        conv5 = Conv2D(512, 3, activation='relu', padding='same')(conv5)
-        up5 = UpSampling2D()(conv5)
-        up5 = Conv2D(256, 2, activation='relu', padding='same')(up5)
+        # encode1 = self.encoder1(inputs)
+        # encode2 = self.encoder2(encode1)
+        # encode3 = self.encoder3(encode2)
 
-        merge6 = concatenate([conv4, up5], 3)
-        conv6 = Conv2D(256, 3, activation='relu', padding='same')(merge6)
-        conv6 = Conv2D(256, 3, activation='relu', padding='same')(conv6)
-        up6 = UpSampling2D()(conv6)
-        up6 = Conv2D(128, 2, activation='relu', padding='same')(up6)
+        # decode1 = self.decoder1(encode3)
+        # merge1 = concatenate([encode3, decode1], 3)
 
-        merge7 = concatenate([conv3, up6], 3)
-        conv7 = Conv2D(128, 3, activation='relu', padding='same')(merge7)
-        conv7 = Conv2D(128, 3, activation='relu', padding='same')(conv7)
-        up7 = UpSampling2D()(conv7)
-        up7 = Conv2D(64, 2, activation='relu', padding='same')(up7)
+        # decode2 = self.decoder2(merge1)
+        # merge2 = concatenate([encode2, decode2], 3)
 
-        merge8 = concatenate([conv2, up7], 3)
-        conv8 = Conv2D(64, 3, activation='relu', padding='same')(merge8)
-        conv8 = Conv2D(64, 3, activation='relu', padding='same')(conv8)
-        up8 = UpSampling2D()(conv8)
-        up8 = Conv2D(32, 2, activation='relu', padding='same')(up8)
+        # decode3 = self.decoder3(merge2)
+        # merge3 = concatenate([encode1, decode3], 3)
 
-        merge9 = concatenate([conv1, up8], 3)
-        conv9 = Conv2D(32, 3, activation='relu', padding='same')(merge9)
-        conv9 = Conv2D(32, 3, activation='relu', padding='same')(conv9)
+        # out = self.output_prob(merge3)
 
-        conv10 = Conv2D(3, 1, activation='softmax', padding='same')(conv9)
-
-        return conv10
+        return out
 
     def loss(self, probs, labels):
         """
@@ -82,7 +99,15 @@ class Model(tf.keras.Model):
         :return: the loss of the model as a Tensor
         """
 
-        loss = SparseCategoricalCrossentropy()(labels, probs)
+        labels = tf.cast(labels, tf.int32)
+
+        # class_weights = tf.constant([np.sum(labels==0), np.sum(labels==1), np.sum(labels==2)])
+        # class_weights = 1-class_weights/tf.reduce_sum(class_weights)
+        class_weights = tf.constant([1, 2])
+        class_weights = class_weights / tf.reduce_sum(class_weights)
+        sample_weights = tf.gather(class_weights, indices=tf.cast(labels, tf.int32))
+
+        loss = SparseCategoricalCrossentropy()(labels, probs, sample_weights)
 
         return tf.reduce_mean(loss)
 
@@ -115,8 +140,6 @@ def train(model, train_inputs, train_labels):
         gradients = tape.gradient(loss, model.trainable_variables)
         model.optimizer.apply_gradients(zip(gradients, model.trainable_variables))
 
-    return None
-
 
 def test(model, test_inputs, test_labels):
     """
@@ -142,31 +165,34 @@ def test(model, test_inputs, test_labels):
         batch_labels = test_labels[starting_index:starting_index + batch_size]
 
         probs = model(batch_inputs)
-        iou += IoU(batch_labels, probs).numpy() * len(batch_inputs)
-        acc += pixel_acc(batch_labels, probs) * len(batch_inputs)
-        mean_acc += mean_pixel_acc(batch_labels, probs) * len(batch_inputs)
+        iou += IoU(batch_labels, probs).numpy()
+        acc += pixel_acc(batch_labels, probs)
+        mean_acc += mean_pixel_acc(batch_labels, probs)
 
-    return iou / len(test_inputs), acc / len(test_inputs), mean_acc / len(test_inputs)
+    return iou / n_batch, acc / n_batch, mean_acc / n_batch
 
 
 def main():
-
-    train_inputs, train_labels = get_data('data/train_img.npy', 'data/train_lab.npy', aug='both')
+    train_inputs, train_labels = get_data('/gdrive/My Drive/CSCI2470 FinalProject Dataset/train_img_r.npy',
+                                          '/gdrive/My Drive/CSCI2470 FinalProject Dataset/train_lab_r.npy', 'both')
     train_inputs = tf.reshape(train_inputs, (train_inputs.shape[0], 256, 256, 1))
-    test_inputs, test_labels = get_data('data/test_img.npy', 'data/test_lab.npy')
+    train_labels = tf.where(tf.cast(train_labels, tf.int32) == 0, 0, 1)
+    test_inputs, test_labels = get_data('/gdrive/My Drive/CSCI2470 FinalProject Dataset/test_img_r.npy',
+                                        '/gdrive/My Drive/CSCI2470 FinalProject Dataset/test_lab_r.npy')
     test_inputs = tf.reshape(test_inputs, (test_inputs.shape[0], 256, 256, 1))
+    test_labels = tf.where(tf.cast(test_labels, tf.int32) == 0, 0, 1)
 
     # create model
     model = Model()
 
     # train
-    for i in range(20):
+    for i in range(50):
         train(model, train_inputs, train_labels)
         print(f"Train Epoch: {i} \tLoss: {np.mean(model.loss_list):.6f}")
         iou, acc, mean_acc = test(model, test_inputs, test_labels)
         print(f"--IoU: {iou:.6f}  --pixel accuracy: {acc:.6f}  --mean pixel accuracy: {mean_acc:.6f}")
-
-    show_seg(model, test_inputs[:10], test_labels[:10])
+        if (i + 1) % 10 == 0:
+            show_seg(model, test_inputs[:10], test_labels[:10], 'unet_no_aug' + str(i + 1))
 
 
 if __name__ == '__main__':

@@ -5,13 +5,12 @@ import numpy as np
 import tensorflow as tf
 import cv2
 
-def aug_rotation(inputs, labels):
 
+def aug_rotation(inputs, labels):
     rotation_inputs = np.zeros(inputs.shape)
     rotation_labels = np.zeros(labels.shape)
 
     for i in range(inputs.shape[2]):
-
         angle = randint(0, 360)
 
         rotation_input = rotate(inputs[:, :, i], angle)
@@ -22,13 +21,12 @@ def aug_rotation(inputs, labels):
 
         return rotation_inputs, rotation_labels
 
-def aug_flip(inputs, labels):
 
+def aug_flip(inputs, labels):
     flip_inputs = np.zeros(inputs.shape)
     flip_labels = np.zeros(labels.shape)
 
     for i in range(inputs.shape[2]):
-
         axis = randint(0, 1)
 
         flip_inputs[:, :, i] = np.flip(inputs[:, :, i], axis)
@@ -36,11 +34,12 @@ def aug_flip(inputs, labels):
 
     return flip_inputs, flip_labels
 
+
 def get_data(input_file_path, output_file_path, aug=None):
     """
     Given two file paths, returns an array of normalized inputs (images) and
     an array of labels (images).
-    
+
     :param input_file_path: file path for the input images, something like 'data/train_img.npy'
     :param output_file_path: file path for the segmentation labels,
     something like 'data/train_lab.npy'

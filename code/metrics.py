@@ -53,7 +53,7 @@ def mean_pixel_acc(labels, probs):
     :return: the mean pixel accuracy of the model as a float
     """
 
-    labels = tf.cast(labels, tf.int32)
+    labels = tf.cast(labels, tf.int64)
     labels = tf.keras.layers.Flatten()(labels)
 
     preds = tf.math.argmax(probs, axis=3)

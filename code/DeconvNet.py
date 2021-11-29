@@ -55,7 +55,7 @@ class Model(tf.keras.Model):
 
         super(Model, self).__init__()
 
-        self.batch_size = 16
+        self.batch_size = 100
         self.optimizer = Adam(learning_rate=1e-5)
         self.loss_list = []
 
@@ -197,10 +197,10 @@ def main():
     model = Model()
 
     # train
-    for i in range(1):
-        train(model, train_inputs[:16], train_labels[:16])
+    for i in range(20):
+        train(model, train_inputs, train_labels)
         print(f"Train Epoch: {i} \tLoss: {np.mean(model.loss_list):.6f}")
-        iou, acc, mean_acc = test(model, test_inputs[:16], test_labels[:16])
+        iou, acc, mean_acc = test(model, test_inputs, test_labels)
         print(f"--IoU: {iou:.6f}  --pixel accuracy: {acc:.6f}  --mean pixel accuracy: {mean_acc:.6f}")
 
     show_seg(model, test_inputs[:10], test_labels[:10])

@@ -14,7 +14,7 @@ class Model(tf.keras.Model):
 
         super(Model, self).__init__()
 
-        self.batch_size = 64
+        self.batch_size = 100
         self.optimizer = Adam(learning_rate=1e-5)
         self.loss_list = []
 

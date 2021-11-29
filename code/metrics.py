@@ -54,14 +54,31 @@ def mean_pixel_acc(labels, probs):
     """
 
     labels = tf.cast(labels, tf.int32)
-    labels = np.array(labels).flatten()
+    labels = tf.keras.layers.Flatten()(labels)
 
     preds = tf.math.argmax(probs, axis=3)
-    preds = np.array(preds).flatten()
+    preds = tf.keras.layers.Flatten()(preds)
 
-    p0 = np.mean((labels == preds)[labels == 0])
-    p1 = np.mean((labels == preds)[labels == 1])
-    p2 = np.mean((labels == preds)[labels == 2])
+    true_preds = tf.where(labels == preds, 1, 0)
+
+    mask0 = tf.where(labels == 0, 1, 0)
+    mask1 = tf.where(labels == 1, 1, 0)
+    mask2 = tf.where(labels == 2, 1, 0)
+
+    p0 = tf.reduce_sum(tf.math.multiply(true_preds, mask0), axis=1) / tf.reduce_sum(mask0, axis=1)
+    p0_not_nan = tf.dtypes.cast(tf.math.logical_not(tf.math.is_nan(p0)), dtype=tf.float64)
+    p0 = tf.math.multiply_no_nan(p0, p0_not_nan)
+    p0 = tf.reduce_mean(p0).numpy()
+
+    p1 = tf.reduce_sum(tf.math.multiply(true_preds, mask1), axis=1) / tf.reduce_sum(mask1, axis=1)
+    p1_not_nan = tf.dtypes.cast(tf.math.logical_not(tf.math.is_nan(p1)), dtype=tf.float64)
+    p1 = tf.math.multiply_no_nan(p1, p1_not_nan)
+    p1 = tf.reduce_mean(p1).numpy()
+
+    p2 = tf.reduce_sum(tf.math.multiply(true_preds, mask2), axis=1) / tf.reduce_sum(mask2, axis=1)
+    p2_not_nan = tf.dtypes.cast(tf.math.logical_not(tf.math.is_nan(p2)), dtype=tf.float64)
+    p2 = tf.math.multiply_no_nan(p2, p2_not_nan)
+    p2 = tf.reduce_mean(p2).numpy()
 
     return np.mean([p0, p1, p2])
 

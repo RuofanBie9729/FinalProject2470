@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+from metrics import IoU, pixel_acc, mean_pixel_acc, show_seg
 from tensorflow.keras.metrics import MeanIoU
 
 import tensorflow as tf

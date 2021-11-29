@@ -156,9 +156,6 @@ def main():
 
     show_seg(model, test_inputs[:10], test_labels[:10])
 
-    model.save('UNet.h5')
-    print('model saved')
-
 
 if __name__ == '__main__':
     main()

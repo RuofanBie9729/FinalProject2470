@@ -14,7 +14,7 @@ class Model(tf.keras.Model):
 
         super(Model, self).__init__()
 
-        self.batch_size = 100
+        self.batch_size = 20
         self.optimizer = Adam(learning_rate=1e-5)
         self.loss_list = []
 
@@ -26,48 +26,48 @@ class Model(tf.keras.Model):
         :return: probs - a matrix of shape (num_inputs, 256, 256, 3); during training, it would be (batch_size, 256, 256, 3)
         """
 
-        conv1 = Conv2D(64, 3, activation='relu', padding='same')(inputs)
-        conv1 = Conv2D(64, 3, activation='relu', padding='same')(conv1)
+        conv1 = Conv2D(32, 3, activation='relu', padding='same')(inputs)
+        conv1 = Conv2D(32, 3, activation='relu', padding='same')(conv1)
         pool1 = MaxPool2D()(conv1)
 
-        conv2 = Conv2D(128, 3, activation='relu', padding='same')(pool1)
-        conv2 = Conv2D(128, 3, activation='relu', padding='same')(conv2)
+        conv2 = Conv2D(64, 3, activation='relu', padding='same')(pool1)
+        conv2 = Conv2D(64, 3, activation='relu', padding='same')(conv2)
         pool2 = MaxPool2D()(conv2)
 
-        conv3 = Conv2D(256, 3, activation='relu', padding='same')(pool2)
-        conv3 = Conv2D(256, 3, activation='relu', padding='same')(conv3)
+        conv3 = Conv2D(128, 3, activation='relu', padding='same')(pool2)
+        conv3 = Conv2D(128, 3, activation='relu', padding='same')(conv3)
         pool3 = MaxPool2D()(conv3)
 
-        conv4 = Conv2D(512, 3, activation='relu', padding='same')(pool3)
-        conv4 = Conv2D(512, 3, activation='relu', padding='same')(conv4)
+        conv4 = Conv2D(256, 3, activation='relu', padding='same')(pool3)
+        conv4 = Conv2D(256, 3, activation='relu', padding='same')(conv4)
         pool4 = MaxPool2D()(conv4)
 
-        conv5 = Conv2D(1024, 3, activation='relu', padding='same')(pool4)
-        conv5 = Conv2D(1024, 3, activation='relu', padding='same')(conv5)
+        conv5 = Conv2D(512, 3, activation='relu', padding='same')(pool4)
+        conv5 = Conv2D(512, 3, activation='relu', padding='same')(conv5)
         up5 = UpSampling2D()(conv5)
-        up5 = Conv2D(512, 2, activation='relu', padding='same')(up5)
+        up5 = Conv2D(256, 2, activation='relu', padding='same')(up5)
 
         merge6 = concatenate([conv4, up5], 3)
-        conv6 = Conv2D(512, 3, activation='relu', padding='same')(merge6)
-        conv6 = Conv2D(512, 3, activation='relu', padding='same')(conv6)
+        conv6 = Conv2D(256, 3, activation='relu', padding='same')(merge6)
+        conv6 = Conv2D(256, 3, activation='relu', padding='same')(conv6)
         up6 = UpSampling2D()(conv6)
-        up6 = Conv2D(256, 2, activation='relu', padding='same')(up6)
+        up6 = Conv2D(128, 2, activation='relu', padding='same')(up6)
 
         merge7 = concatenate([conv3, up6], 3)
-        conv7 = Conv2D(256, 3, activation='relu', padding='same')(merge7)
-        conv7 = Conv2D(256, 3, activation='relu', padding='same')(conv7)
+        conv7 = Conv2D(128, 3, activation='relu', padding='same')(merge7)
+        conv7 = Conv2D(128, 3, activation='relu', padding='same')(conv7)
         up7 = UpSampling2D()(conv7)
-        up7 = Conv2D(128, 2, activation='relu', padding='same')(up7)
+        up7 = Conv2D(64, 2, activation='relu', padding='same')(up7)
 
         merge8 = concatenate([conv2, up7], 3)
-        conv8 = Conv2D(128, 3, activation='relu', padding='same')(merge8)
-        conv8 = Conv2D(128, 3, activation='relu', padding='same')(conv8)
+        conv8 = Conv2D(64, 3, activation='relu', padding='same')(merge8)
+        conv8 = Conv2D(64, 3, activation='relu', padding='same')(conv8)
         up8 = UpSampling2D()(conv8)
-        up8 = Conv2D(64, 2, activation='relu', padding='same')(up8)
+        up8 = Conv2D(32, 2, activation='relu', padding='same')(up8)
 
         merge9 = concatenate([conv1, up8], 3)
-        conv9 = Conv2D(64, 3, activation='relu', padding='same')(merge9)
-        conv9 = Conv2D(64, 3, activation='relu', padding='same')(conv9)
+        conv9 = Conv2D(32, 3, activation='relu', padding='same')(merge9)
+        conv9 = Conv2D(32, 3, activation='relu', padding='same')(conv9)
 
         conv10 = Conv2D(3, 1, activation='softmax', padding='same')(conv9)
 
@@ -129,12 +129,24 @@ def test(model, test_inputs, test_labels):
     :return: IoU, pixel accuracy and mean pixel accuracy
     """
 
-    probs = model(test_inputs)
-    iou = IoU(test_labels, probs)
-    acc = pixel_acc(test_labels, probs)
-    mean_acc = mean_pixel_acc(test_labels, probs)
+    batch_size = model.batch_size
+    n_batch = math.ceil(len(test_inputs) / batch_size)
 
-    return iou, acc, mean_acc
+    iou = 0
+    acc = 0
+    mean_acc = 0
+
+    for i in range(n_batch):
+        starting_index = i * batch_size
+        batch_inputs = test_inputs[starting_index:starting_index + batch_size]
+        batch_labels = test_labels[starting_index:starting_index + batch_size]
+
+        probs = model(batch_inputs)
+        iou += IoU(batch_labels, probs).numpy() * len(batch_inputs)
+        acc += pixel_acc(batch_labels, probs) * len(batch_inputs)
+        mean_acc += mean_pixel_acc(batch_labels, probs) * len(batch_inputs)
+
+    return iou / len(test_inputs), acc / len(test_inputs), mean_acc / len(test_inputs)
 
 
 def main():

@@ -76,24 +76,24 @@ class FCN(tf.keras.Model):
             FCNoutput = Conv2DTranspose(21, 2, 32)(convout3)
         elif self.fcn_16s:
             predict1 = UpSampling2D()(convout3)
-            predict1 = Conv2D(21, 3, activation='relu', padding='same')(predict1)
-            convout2 = Conv2D(21, 3, activation='relu', padding='same')(convout2)
-            FCNoutput = tf.add([predict1, convout2])
+            predict1 = Conv2D(21, 1, activation='relu', padding='same')(predict1)
+            convout2 = Conv2D(21, 1, activation='relu', padding='same')(convout2)
+            FCNoutput = tf.add(predict1, convout2)
             FCNoutput = Conv2DTranspose(21, 2, 16)(FCNoutput)
         else:
             predict1 = UpSampling2D()(convout3)
-            predict1 = Conv2D(21, 3, activation='relu', padding='same')(predict1)
-            convout2 = Conv2D(21, 3, activation='relu', padding='same')(convout2)
-            FCNoutput = tf.add([predict1, convout2])
+            predict1 = Conv2D(21, 1, activation='relu', padding='same')(predict1)
+            convout2 = Conv2D(21, 1, activation='relu', padding='same')(convout2)
+            FCNoutput = tf.add(predict1, convout2)
             FCNoutput = UpSampling2D()(FCNoutput)
-            convout1 = Conv2D(21, 3, activation='relu', padding='same')(convout1)
-            FCNoutput = tf.add([FCNoutput, convout1])
+            convout1 = Conv2D(21, 1, activation='relu', padding='same')(convout1)
+            FCNoutput = tf.add(FCNoutput, convout1)
             FCNoutput = Conv2DTranspose(21, 2, 8)(FCNoutput)
 
         prbs = self.softmax(FCNoutput)
 
         return prbs
-
+    
     def loss(self, prbs, labels):
         """
         Calculates the model cross-entropy loss after one forward pass.

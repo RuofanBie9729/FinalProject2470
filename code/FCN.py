@@ -42,20 +42,23 @@ class FCN(tf.keras.Model):
         self.convnets1.add(Conv2D(128, 3, activation='relu', padding='same'))
         self.convnets1.add(tf.keras.layers.MaxPooling2D())
         self.convnets1.add(Conv2D(256, 3, activation='relu', padding='same'))
-        self.convnets1.add(Conv2D(256, 1, activation='relu', padding='same'))
+        self.convnets1.add(Conv2D(256, 3, activation='relu', padding='same'))
+        self.convnets1.add(Conv2D(256, 3, activation='relu', padding='same'))
         self.convnets1.add(tf.keras.layers.MaxPooling2D())
         
         self.convnets2.add(Conv2D(512, 3, activation='relu', padding='same'))
         self.convnets2.add(Conv2D(512, 3, activation='relu', padding='same'))
-        self.convnets2.add(Conv2D(512, 1, activation='relu', padding='same'))
+        self.convnets2.add(Conv2D(512, 3, activation='relu', padding='same'))
         self.convnets2.add(tf.keras.layers.MaxPooling2D())
         
         self.convnets3.add(Conv2D(512, 3, activation='relu', padding='same'))
         self.convnets3.add(Conv2D(512, 3, activation='relu', padding='same'))
         self.convnets3.add(Conv2D(512, 3, activation='relu', padding='same'))
         self.convnets3.add(tf.keras.layers.MaxPooling2D())
-        self.convnets3.add(Conv2D(4096, 3, activation='relu', padding='same'))
+        self.convnets3.add(Conv2D(4096, 1, activation='relu', padding='same'))
+        self.convnets3.add(Dropout(0.5))
         self.convnets3.add(Conv2D(4096, 1, activation='relu', padding='same')) 
+        self.convnets3.add(Dropout(0.5))
 
         self.softmax.add(Conv2D(3, 1, activation='softmax', padding='same'))
 

@@ -64,7 +64,7 @@ def mean_pixel_acc(labels, probs):
 
     mask0 = tf.where(labels == 0, 1, 0)
     mask1 = tf.where(labels == 1, 1, 0)
-    # mask2 = tf.where(labels==2, 1, 0)
+    mask2 = tf.where(labels==2, 1, 0)
 
     p0 = tf.reduce_sum(tf.math.multiply(true_preds, mask0), axis=1) / tf.reduce_sum(mask0, axis=1)
     p0_not_nan = tf.dtypes.cast(tf.math.logical_not(tf.math.is_nan(p0)), dtype=tf.float64)
@@ -76,12 +76,12 @@ def mean_pixel_acc(labels, probs):
     p1 = tf.math.multiply_no_nan(p1, p1_not_nan)
     p1 = tf.reduce_mean(p1).numpy()
 
-    # p2 = tf.reduce_sum(tf.math.multiply(true_preds, mask2), axis=1) / tf.reduce_sum(mask2, axis=1)
-    # p2_not_nan = tf.dtypes.cast(tf.math.logical_not(tf.math.is_nan(p2)), dtype=tf.float64)
-    # p2 = tf.math.multiply_no_nan(p2, p2_not_nan)
-    # p2 = tf.reduce_mean(p2).numpy()
+    p2 = tf.reduce_sum(tf.math.multiply(true_preds, mask2), axis=1) / tf.reduce_sum(mask2, axis=1)
+    p2_not_nan = tf.dtypes.cast(tf.math.logical_not(tf.math.is_nan(p2)), dtype=tf.float64)
+    p2 = tf.math.multiply_no_nan(p2, p2_not_nan)
+    p2 = tf.reduce_mean(p2).numpy()
 
-    return np.mean([p0, p1])
+    return np.mean([p0, p1, p2])
 
 
 def show_seg(model, inputs, labels, model_name):
@@ -90,6 +90,8 @@ def show_seg(model, inputs, labels, model_name):
     probs = model(inputs)
     preds = tf.math.argmax(probs, axis=3)
     preds = tf.cast(preds, tf.double)
+
+    labels = tf.cast(labels, tf.double)
 
     images = tf.concat([tf.reshape(inputs, (num_obs, 256, 256)), labels, preds], axis=0)
 

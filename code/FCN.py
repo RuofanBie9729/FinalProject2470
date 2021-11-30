@@ -19,7 +19,7 @@ class FCN(tf.keras.Model):
         """
         super(FCN, self).__init__()
 
-        self.batch_size = 100
+        self.batch_size = 1
         # Initialize convolutional layers and deconvolutional layer
         self.convnets = tf.keras.Sequential()
         self.deconv = tf.keras.Sequential()
@@ -50,8 +50,6 @@ class FCN(tf.keras.Model):
 
         return prbs
 
-        pass
-
     def loss(self, prbs, labels):
         """
         Calculates the model cross-entropy loss after one forward pass.
@@ -62,11 +60,16 @@ class FCN(tf.keras.Model):
         :param labels: during training, matrix of shape (batch_size, self.num_classes) containing the train labels
         :return: the loss of the model as a Tensor
         """
-        scce = tf.keras.losses.SparseCategoricalCrossentropy()
 
-        return tf.math.reduce_mean(scce(labels, prbs))
+        labels = tf.cast(labels, tf.int32)
 
-        pass
+        class_weights = tf.constant([1, 3, 3])
+        class_weights = class_weights / tf.reduce_sum(class_weights)
+        sample_weights = tf.gather(class_weights, indices=tf.cast(labels, tf.int32))
+
+        loss = SparseCategoricalCrossentropy()(labels, prbs, sample_weights)
+
+        return tf.reduce_mean(loss)
 
 
 def train(model, train_inputs, train_labels):
@@ -115,35 +118,44 @@ def test(model, test_inputs, test_labels):
     :return: IoU, pixel accuracy and mean pixel accuracy
     """
 
-    probs = model(test_inputs)
-    iou = IoU(test_labels, probs)
-    acc = pixel_acc(test_labels, probs)
-    mean_acc = mean_pixel_acc(test_labels, probs)
+    batch_size = model.batch_size
+    n_batch = math.ceil(len(test_inputs) / batch_size)
 
-    return iou, acc, mean_acc
+    iou = 0
+    acc = 0
+    mean_acc = 0
+
+    for i in range(n_batch):
+        starting_index = i * batch_size
+        batch_inputs = test_inputs[starting_index:starting_index + batch_size]
+        batch_labels = test_labels[starting_index:starting_index + batch_size]
+
+        probs = model(batch_inputs)
+        iou += IoU(batch_labels, probs).numpy() * len(batch_inputs)
+        acc += pixel_acc(batch_labels, probs) * len(batch_inputs)
+        mean_acc += mean_pixel_acc(batch_labels, probs) * len(batch_inputs)
+
+    return iou / len(test_inputs), acc / len(test_inputs), mean_acc / len(test_inputs)
 
 
 def main():
-    train_inputs, train_labels = get_data('/gdrive/My Drive/CSCI2470 FinalProject Dataset/train_img.npy',
-                                          '/gdrive/My Drive/CSCI2470 FinalProject Dataset/train_lab.npy')
+    train_inputs, train_labels = get_data('../data/train_img_r.npy', '../data/train_lab_r.npy', 'both')
     train_inputs = tf.reshape(train_inputs, (train_inputs.shape[0], 256, 256, 1))
-    test_inputs, test_labels = get_data('/gdrive/My Drive/CSCI2470 FinalProject Dataset/test_img.npy',
-                                        '/gdrive/My Drive/CSCI2470 FinalProject Dataset/test_lab.npy')
-    test_inputs = tf.reshape(test_inputs, (test_inputs.shape[0], test_inputs.shape[1], test_inputs.shape[2], 1))
+    test_inputs, test_labels = get_data('../data/test_img_r.npy', '../data/test_lab_r.npy')
+    test_inputs = tf.reshape(test_inputs, (test_inputs.shape[0], 256, 256, 1))
 
     # create model
-    model = FCN()
+    model = Model()
 
     # train
-    for i in range(5):
-        print(i)
-        loss_list = train(model, train_inputs, train_labels)
-        print(np.mean(loss_list))
-    iou, acc, mean_acc = test(model, test_inputs, test_labels)
-    print(acc)
-    print(iou)
-    print(mean_acc)
-    show_seg(model, test_inputs[:10], test_labels[:10], 'fcn')
+    for i in range(50):
+        train(model, train_inputs, train_labels)
+        print(f"Train Epoch: {i}  Loss: {np.mean(model.loss_list):.6f}")
+        iou, acc, mean_acc = test(model, test_inputs, test_labels)
+        print(f"--IoU: {iou:.6f}  --pixel accuracy: {acc:.6f}  --mean pixel accuracy: {mean_acc:.6f}")
+
+        if (i + 1) % 10 == 0:
+            show_seg(model, test_inputs[:10], test_labels[:10], 'fcn_both' + str(i + 1))
 
 
 if __name__ == '__main__':

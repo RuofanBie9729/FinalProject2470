@@ -18,7 +18,7 @@ def tf_count(t, val):
     return count.numpy()
 
 class FCN(tf.keras.Model):
-    def __init__(self):
+    def __init__(self, fcn_32s = False, fcn_16s = False):
         """
         This model class will contain the architecture for our FCN that
         implements image segmentation.
@@ -26,7 +26,9 @@ class FCN(tf.keras.Model):
         super(FCN, self).__init__()
 
         self.batch_size = 1
-        self.optimizer = tf.keras.optimizers.Adam(learning_rate=1e-5)
+        self.optimizer = tf.keras.optimizers.Adam(learning_rate=0.0001)
+        self.fcn_32s = fcn_32s
+        self.fcn_16s = fcn_16s
         # Initialize convolutional layers and deconvolutional layer
         self.convnets1 = tf.keras.Sequential()
         self.convnets2 = tf.keras.Sequential()
@@ -40,12 +42,12 @@ class FCN(tf.keras.Model):
         self.convnets1.add(Conv2D(128, 3, activation='relu', padding='same'))
         self.convnets1.add(tf.keras.layers.MaxPooling2D())
         self.convnets1.add(Conv2D(256, 3, activation='relu', padding='same'))
-        self.convnets1.add(Conv2D(256, 3, activation='relu', padding='same'))
+        self.convnets1.add(Conv2D(256, 1, activation='relu', padding='same'))
         self.convnets1.add(tf.keras.layers.MaxPooling2D())
         
         self.convnets2.add(Conv2D(512, 3, activation='relu', padding='same'))
         self.convnets2.add(Conv2D(512, 3, activation='relu', padding='same'))
-        self.convnets2.add(Conv2D(512, 3, activation='relu', padding='same'))
+        self.convnets2.add(Conv2D(512, 1, activation='relu', padding='same'))
         self.convnets2.add(tf.keras.layers.MaxPooling2D())
         
         self.convnets3.add(Conv2D(512, 3, activation='relu', padding='same'))
@@ -53,7 +55,7 @@ class FCN(tf.keras.Model):
         self.convnets3.add(Conv2D(512, 3, activation='relu', padding='same'))
         self.convnets3.add(tf.keras.layers.MaxPooling2D())
         self.convnets3.add(Conv2D(4096, 3, activation='relu', padding='same'))
-        self.convnets3.add(Conv2D(4096, 3, activation='relu', padding='same')) 
+        self.convnets3.add(Conv2D(4096, 1, activation='relu', padding='same')) 
 
         self.softmax.add(Conv2D(3, 1, activation='softmax', padding='same'))
 
@@ -66,17 +68,21 @@ class FCN(tf.keras.Model):
         convout1 = self.convnets1(inputs)
         convout2 = self.convnets2(convout1)
         convout3 = self.convnets3(convout2)
-        predict1 = Conv2D(16, 3, activation='relu', padding='same')(convout3)
-        predict2 = Conv2D(16, 3, activation='relu', padding='same')(convout2)
-        predict3 = Conv2D(16, 3, activation='relu', padding='same')(convout1)
-        
-        FCNoutput = Conv2DTranspose(16, 2, 2)(predict1)
-        FCNoutput = tf.add(FCNoutput, predict2)
-        FCNoutput = Conv2DTranspose(16, 2, 2)(FCNoutput)
-        FCNoutput = tf.add(FCNoutput, predict3)
-        FCNoutput = Conv2DTranspose(16, 2, 2)(FCNoutput)
-        FCNoutput = Conv2DTranspose(16, 2, 2)(FCNoutput)
-        FCNoutput = Conv2DTranspose(16, 2, 2)(FCNoutput)
+
+        if self.fcn_32s:
+            FCNoutput = Conv2DTranspose(16, 2, 32)(convout3)
+        elif self.fcn_16s:
+            predict1 = UpSampling2D()(convout3)
+            predict1 = Conv2D(16, 3, activation='relu', padding='same')(predict1)
+            FCNoutput = tf.concat([predict1, convout2], 3)
+            FCNoutput = Conv2DTranspose(16, 2, 16)(FCNoutput)
+        else:
+            predict1 = UpSampling2D()(convout3)
+            predict1 = Conv2D(16, 3, activation='relu', padding='same')(predict1)
+            FCNoutput = tf.concat([predict1, convout2], 3)
+            FCNoutput = UpSampling2D()(FCNoutput)
+            FCNoutput = tf.concat([FCNoutput, convout1], 3)
+            FCNoutput = Conv2DTranspose(16, 2, 8)(FCNoutput)
 
         prbs = self.softmax(FCNoutput)
 
@@ -93,9 +99,10 @@ class FCN(tf.keras.Model):
         :return: the loss of the model as a Tensor
         """
 
-        class_weights = tf.constant([tf_count(labels, 0), tf_count(labels, 1), tf_count(labels, 2)])
-        class_weights = class_weights / tf.reduce_sum(class_weights)
-        class_weights = tf.exp(-class_weights)
+        #class_weights = tf.constant([tf_count(labels, 0), tf_count(labels, 1), tf_count(labels, 2)])
+        class_weights = tf.constant([1,3,3])
+        #class_weights = class_weights / tf.reduce_sum(class_weights)
+        #class_weights = tf.exp(-class_weights)
         class_weights = class_weights / tf.reduce_sum(class_weights)
         #print(class_weights)
         sample_weights = tf.gather(class_weights, indices=tf.cast(labels, tf.int32))

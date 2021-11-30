@@ -24,6 +24,7 @@ There are some works done for segmenting prostate MRI images using deep learning
 
 #### Public Implementation
 Some of the model architectures we would like to implement have publicly available implementation.
+* FCN: https://github.com/MarvinTeichmann/tensorflow-fcn/blob/master/fcn8_vgg.py
 * DeconvNet: https://github.com/HyeonwooNoh/DeconvNet/blob/master/model/DeconvNet/DeconvNet_inference_deploy.prototxt (Caffe)
 * U-Net: https://github.com/milesial/Pytorch-UNet/tree/master/unet (Pytorch).
 

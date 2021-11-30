@@ -11,6 +11,12 @@ import random
 import math
 
 
+def tf_count(t, val):
+    elements_equal_to_value = tf.equal(t, val)
+    as_ints = tf.cast(elements_equal_to_value, tf.int32)
+    count = tf.reduce_sum(as_ints)
+    return count.numpy()
+
 class FCN(tf.keras.Model):
     def __init__(self):
         """
@@ -20,33 +26,59 @@ class FCN(tf.keras.Model):
         super(FCN, self).__init__()
 
         self.batch_size = 1
-        # Initialize convolutional layers and deconvolutional layer
-        self.convnets = tf.keras.Sequential()
-        self.deconv = tf.keras.Sequential()
         self.optimizer = tf.keras.optimizers.Adam(learning_rate=1e-5)
+        # Initialize convolutional layers and deconvolutional layer
+        self.convnets1 = tf.keras.Sequential()
+        self.convnets2 = tf.keras.Sequential()
+        self.convnets3 = tf.keras.Sequential()
+        self.softmax = tf.keras.Sequential()
 
-        self.convnets.add(Conv2D(2, 3, activation='relu'))
-        self.convnets.add(Conv2D(2, 3, activation='relu'))
-        self.convnets.add(Conv2D(4, 3, activation='relu'))
-        self.convnets.add(Conv2D(4, 3, activation='relu'))
-        # self.convnets.add(tf.keras.layers.MaxPooling2D())
-        self.convnets.add(Conv2D(8, 3, activation='relu'))
-        self.convnets.add(Conv2D(8, 3, activation='relu'))
-        self.convnets.add(Conv2D(8, 3, activation='relu'))
-        self.convnets.add(Conv2D(16, 3, activation='relu'))
-        self.convnets.add(Conv2D(16, 1, activation='relu'))
-        self.deconv.add(Conv2DTranspose(3, 17))
-        self.deconv.add(Conv2D(3, 1, activation='softmax', padding='same'))
+        self.convnets1.add(Conv2D(64, 3, activation='relu', padding='same'))
+        self.convnets1.add(Conv2D(64, 3, activation='relu', padding='same'))
+        self.convnets1.add(tf.keras.layers.MaxPooling2D())
+        self.convnets1.add(Conv2D(128, 3, activation='relu', padding='same'))
+        self.convnets1.add(Conv2D(128, 3, activation='relu', padding='same'))
+        self.convnets1.add(tf.keras.layers.MaxPooling2D())
+        self.convnets1.add(Conv2D(256, 3, activation='relu', padding='same'))
+        self.convnets1.add(Conv2D(256, 3, activation='relu', padding='same'))
+        self.convnets1.add(tf.keras.layers.MaxPooling2D())
+        
+        self.convnets2.add(Conv2D(512, 3, activation='relu', padding='same'))
+        self.convnets2.add(Conv2D(512, 3, activation='relu', padding='same'))
+        self.convnets2.add(Conv2D(512, 3, activation='relu', padding='same'))
+        self.convnets2.add(tf.keras.layers.MaxPooling2D())
+        
+        self.convnets3.add(Conv2D(512, 3, activation='relu', padding='same'))
+        self.convnets3.add(Conv2D(512, 3, activation='relu', padding='same'))
+        self.convnets3.add(Conv2D(512, 3, activation='relu', padding='same'))
+        self.convnets3.add(tf.keras.layers.MaxPooling2D())
+        self.convnets3.add(Conv2D(4096, 3, activation='relu', padding='same'))
+        self.convnets3.add(Conv2D(4096, 3, activation='relu', padding='same')) 
+
+        self.softmax.add(Conv2D(3, 1, activation='softmax', padding='same'))
 
     def call(self, inputs):
         """
         Runs a forward pass on an input batch of images.
-
         :param inputs: images, shape of (num_inputs, 256, 256, 1)
         :return: logits - Flatten predictied image, a matrix of shape (num_inputs, 256*256)
         """
-        FCNOutput = self.convnets(inputs)
-        prbs = self.deconv(FCNOutput)
+        convout1 = self.convnets1(inputs)
+        convout2 = self.convnets2(convout1)
+        convout3 = self.convnets3(convout2)
+        predict1 = Conv2D(16, 3, activation='relu', padding='same')(convout3)
+        predict2 = Conv2D(16, 3, activation='relu', padding='same')(convout2)
+        predict3 = Conv2D(16, 3, activation='relu', padding='same')(convout1)
+        
+        FCNoutput = Conv2DTranspose(16, 2, 2)(predict1)
+        FCNoutput = tf.add(FCNoutput, predict2)
+        FCNoutput = Conv2DTranspose(16, 2, 2)(FCNoutput)
+        FCNoutput = tf.add(FCNoutput, predict3)
+        FCNoutput = Conv2DTranspose(16, 2, 2)(FCNoutput)
+        FCNoutput = Conv2DTranspose(16, 2, 2)(FCNoutput)
+        FCNoutput = Conv2DTranspose(16, 2, 2)(FCNoutput)
+
+        prbs = self.softmax(FCNoutput)
 
         return prbs
 
@@ -54,23 +86,23 @@ class FCN(tf.keras.Model):
         """
         Calculates the model cross-entropy loss after one forward pass.
         Softmax is applied in this function.
-
         :param logits: during training, a matrix of shape (batch_size, self.num_classes)
         containing the result of multiple convolution and feed forward layers
         :param labels: during training, matrix of shape (batch_size, self.num_classes) containing the train labels
+        :param labels: during training, list of length 3 containing the weight for each cluster according to the count of 0, 1, 2 in training set
         :return: the loss of the model as a Tensor
         """
 
-        labels = tf.cast(labels, tf.int32)
-
-        class_weights = tf.constant([1, 3, 3])
+        class_weights = tf.constant([tf_count(labels, 0), tf_count(labels, 1), tf_count(labels, 2)])
         class_weights = class_weights / tf.reduce_sum(class_weights)
+        class_weights = tf.exp(-class_weights)
+        class_weights = class_weights / tf.reduce_sum(class_weights)
+        #print(class_weights)
         sample_weights = tf.gather(class_weights, indices=tf.cast(labels, tf.int32))
 
         loss = SparseCategoricalCrossentropy()(labels, prbs, sample_weights)
 
         return tf.reduce_mean(loss)
-
 
 def train(model, train_inputs, train_labels):
     '''

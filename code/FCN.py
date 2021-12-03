@@ -31,7 +31,7 @@ class FCN(tf.keras.Model):
         super(FCN, self).__init__()
 
         self.batch_size = 1
-        self.optimizer = tf.keras.optimizers.Adam(learning_rate=1e-5)
+        self.optimizer = tf.keras.optimizers.Adam(learning_rate=1e-4)
         self.fcn_32s = fcn_32s
         self.fcn_16s = fcn_16s
         # Initialize convolutional layers and deconvolutional layer
@@ -66,7 +66,7 @@ class FCN(tf.keras.Model):
         vgg16.add(Conv2D(4096, 1, activation='relu', padding='same')) 
         vgg16.add(Dropout(0.2, name='conv7'))
 
-        vgg16.add(Conv2D(1000, 1, activation='relu', padding='same'))
+        vgg16.add(Conv2D(1000, 1, activation='relu', padding='same', name='pred'))
         #output = vgg16(input_layer)
         return tf.keras.Model(vgg16.input, vgg16.output)
     
@@ -75,23 +75,23 @@ class FCN(tf.keras.Model):
         vgg16pool4 = vgg16.get_layer('pool4').output
         vgg16pool3 = vgg16.get_layer('pool3').output
         if self.fcn_32s:
-            predict1 = Conv2D(21, 1, activation='relu', padding='same')(vgg16Output)
-            FCNoutput = Conv2DTranspose(21, 64, 32, padding='same')(predict1)		
+            predict1 = Conv2D(3, 1, activation='relu', padding='same')(vgg16Output)
+            FCNoutput = Conv2DTranspose(3, 64, 32, padding='same')(predict1)		
         elif self.fcn_16s:
-            predict1 = Conv2D(21, 1, activation='relu', padding='same')(vgg16Output)
-            predict1 = Conv2DTranspose(21, 4, 2, padding='same')(predict1)
-            convout2 = Conv2D(21, 1, activation='relu', padding='same')(vgg16pool4)
+            predict1 = Conv2D(3, 1, activation='relu', padding='same')(vgg16Output)
+            predict1 = Conv2DTranspose(3, 4, 2, padding='same')(predict1)
+            convout2 = Conv2D(3, 1, activation='relu', padding='same')(vgg16pool4)
             FCNoutput = tf.add(predict1, convout2)
-            FCNoutput = Conv2DTranspose(21, 32, 16, padding='same')(FCNoutput)
+            FCNoutput = Conv2DTranspose(3, 32, 16, padding='same')(FCNoutput)
         else:
-            predict1 = Conv2D(21, 1, activation='relu', padding='same')(vgg16Output)
-            predict1 = Conv2DTranspose(21, 4, 2, padding='same')(predict1)
-            convout2 = Conv2D(21, 1, activation='relu', padding='same')(vgg16pool4)
+            predict1 = Conv2D(3, 1, activation='relu', padding='same')(vgg16Output)
+            predict1 = Conv2DTranspose(3, 4, 2, padding='same')(predict1)
+            convout2 = Conv2D(3, 1, activation='relu', padding='same')(vgg16pool4)
             FCNoutput = tf.add(predict1, convout2)
-            FCNoutput = Conv2DTranspose(21, 4, 2, padding='same')(FCNoutput)
-            convout1 = Conv2D(21, 1, activation='relu', padding='same')(vgg16pool3)
+            FCNoutput = Conv2DTranspose(3, 4, 2, padding='same')(FCNoutput)
+            convout1 = Conv2D(3, 1, activation='relu', padding='same')(vgg16pool3)
             FCNoutput = tf.add(FCNoutput, convout1)
-            FCNoutput = Conv2DTranspose(21, 16, 8, padding='same')(FCNoutput)
+            FCNoutput = Conv2DTranspose(3, 16, 8, padding='same')(FCNoutput)
         FCNoutput = self.softmax(FCNoutput)
         return tf.keras.Model(vgg16.input, FCNoutput)	
 
@@ -208,13 +208,13 @@ def test(model, test_inputs, test_labels):
 
 def main(arg = None):
 
-    inputs, train_labels = get_data('train_img_r.npy', 'train_lab_r.npy', arg)
+    inputs, train_labels = get_data('../data/train_img_r.npy', '../data/train_lab_r.npy', arg)
     train_inputs = np.zeros((inputs.shape[0], 256, 256, 3))
     train_inputs[:, :, :, 0] = inputs
     train_inputs[:, :, :, 1] = inputs
     train_inputs[:, :, :, 2] = inputs
     train_inputs = tf.convert_to_tensor(train_inputs)
-    inputs, test_labels = get_data('test_img_r.npy', 'test_lab_r.npy')
+    inputs, test_labels = get_data('../data/test_img_r.npy', '../data/test_lab_r.npy')
     test_inputs = np.zeros((inputs.shape[0], 256, 256, 3))
     test_inputs[:, :, :, 0] = inputs
     test_inputs[:, :, :, 1] = inputs

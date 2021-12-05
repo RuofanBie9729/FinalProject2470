@@ -41,35 +41,35 @@ class FCN(tf.keras.Model):
         #input_layer = tf.keras.Input(shape=(256, 256, 3), name="input")
         vgg16 = tf.keras.Sequential()
 
-        vgg16.add(Conv2D(64, 3, activation='relu', padding='same', input_shape=(256, 256, 3)))
-        vgg16.add(Conv2D(64, 3, activation='relu', padding='same'))
+        vgg16.add(Conv2D(64, 3, activation='relu', padding='same', input_shape=(256, 256, 3), name='conv11'))
+        vgg16.add(Conv2D(64, 3, activation='relu', padding='same', name='conv12'))
         vgg16.add(tf.keras.layers.MaxPooling2D())
-        vgg16.add(Conv2D(128, 3, activation='relu', padding='same'))
-        vgg16.add(Conv2D(128, 3, activation='relu', padding='same'))
+        vgg16.add(Conv2D(128, 3, activation='relu', padding='same', name='conv21'))
+        vgg16.add(Conv2D(128, 3, activation='relu', padding='same', name='conv22'))
         vgg16.add(tf.keras.layers.MaxPooling2D())
-        vgg16.add(Conv2D(256, 3, activation='relu', padding='same'))
-        vgg16.add(Conv2D(256, 3, activation='relu', padding='same'))
-        vgg16.add(Conv2D(256, 3, activation='relu', padding='same'))
+        vgg16.add(Conv2D(256, 3, activation='relu', padding='same', name='conv31'))
+        vgg16.add(Conv2D(256, 3, activation='relu', padding='same', name='conv32'))
+        vgg16.add(Conv2D(256, 3, activation='relu', padding='same', name='conv33'))
         vgg16.add(tf.keras.layers.MaxPooling2D(name='pool3'))
     
-        vgg16.add(Conv2D(512, 3, activation='relu', padding='same'))
-        vgg16.add(Conv2D(512, 3, activation='relu', padding='same'))
-        vgg16.add(Conv2D(512, 3, activation='relu', padding='same'))
+        vgg16.add(Conv2D(512, 3, activation='relu', padding='same', name='conv41'))
+        vgg16.add(Conv2D(512, 3, activation='relu', padding='same', name='conv42'))
+        vgg16.add(Conv2D(512, 3, activation='relu', padding='same', name='conv43'))
         vgg16.add(tf.keras.layers.MaxPooling2D(name='pool4'))
        
-        vgg16.add(Conv2D(512, 3, activation='relu', padding='same'))
-        vgg16.add(Conv2D(512, 3, activation='relu', padding='same'))
-        vgg16.add(Conv2D(512, 3, activation='relu', padding='same'))
+        vgg16.add(Conv2D(512, 3, activation='relu', padding='same', name='conv51'))
+        vgg16.add(Conv2D(512, 3, activation='relu', padding='same', name='conv52'))
+        vgg16.add(Conv2D(512, 3, activation='relu', padding='same', name='conv53'))
         vgg16.add(tf.keras.layers.MaxPooling2D())
-        vgg16.add(Conv2D(4096, 7, activation='relu', padding='same'))
+        vgg16.add(Conv2D(4096, 7, activation='relu', padding='same', name='dense1'))
         vgg16.add(Dropout(0.2))
-        vgg16.add(Conv2D(4096, 1, activation='relu', padding='same')) 
+        vgg16.add(Conv2D(4096, 1, activation='relu', padding='same', name='dense2')) 
         vgg16.add(Dropout(0.2, name='conv7'))
 
         vgg16.add(Conv2D(1000, 1, activation='relu', padding='same', name='pred'))
         #output = vgg16(input_layer)
         return tf.keras.Model(vgg16.input, vgg16.output)
-    
+   
     def Model(self, vgg16):   
         vgg16Output = vgg16.get_layer('conv7').output
         vgg16pool4 = vgg16.get_layer('pool4').output
@@ -103,6 +103,21 @@ class FCN(tf.keras.Model):
         """
         base_model = self.vgg16_base()
         FCNmodel = self.Model(base_model)
+        FCNmodel.get_layer('conv11').trainable=False
+        FCNmodel.get_layer('conv12').trainable=False
+        FCNmodel.get_layer('conv21').trainable=False
+        FCNmodel.get_layer('conv22').trainable=False
+        FCNmodel.get_layer('conv31').trainable=False
+        FCNmodel.get_layer('conv32').trainable=False
+        FCNmodel.get_layer('conv33').trainable=False
+        FCNmodel.get_layer('conv41').trainable=False
+        FCNmodel.get_layer('conv42').trainable=False
+        FCNmodel.get_layer('conv43').trainable=False
+        FCNmodel.get_layer('conv51').trainable=False
+        FCNmodel.get_layer('conv52').trainable=False
+        FCNmodel.get_layer('conv53').trainable=False
+        FCNmodel.get_layer('dense1').trainable=False
+        FCNmodel.get_layer('dense2').trainable=False
         prbs = FCNmodel(inputs)
 
         return prbs
@@ -208,13 +223,13 @@ def test(model, test_inputs, test_labels):
 
 def main(arg = None):
 
-    inputs, train_labels = get_data('../data/train_img_r.npy', '../data/train_lab_r.npy', arg)
+    inputs, train_labels = get_data('train_img_r.npy', 'train_lab_r.npy', arg)
     train_inputs = np.zeros((inputs.shape[0], 256, 256, 3))
     train_inputs[:, :, :, 0] = inputs
     train_inputs[:, :, :, 1] = inputs
     train_inputs[:, :, :, 2] = inputs
     train_inputs = tf.convert_to_tensor(train_inputs)
-    inputs, test_labels = get_data('../data/test_img_r.npy', '../data/test_lab_r.npy')
+    inputs, test_labels = get_data('test_img_r.npy', 'test_lab_r.npy')
     test_inputs = np.zeros((inputs.shape[0], 256, 256, 3))
     test_inputs[:, :, :, 0] = inputs
     test_inputs[:, :, :, 1] = inputs

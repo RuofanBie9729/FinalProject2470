@@ -14,13 +14,6 @@ import numpy as np
 import random
 import math
 
-def get_layer_outputs(model, layer_name, input_data, learning_phase=1):
-    outputs   = [layer.output for layer in model.layers if layer_name in layer.name]
-    layers_fn = K.function([model.input, K.learning_phase()], outputs)
-    return layers_fn([input_data, learning_phase])
-
-
-
 
 class FCN(tf.keras.Model):
     def __init__(self, fcn_32s = False, fcn_16s = False):
@@ -29,71 +22,37 @@ class FCN(tf.keras.Model):
         implements image segmentation.
         """
         super(FCN, self).__init__()
-
         self.batch_size = 1
-        self.optimizer = tf.keras.optimizers.Adam(learning_rate=1e-4)
+        self.optimizer = tf.keras.optimizers.Adam(learning_rate=0.0001)
         self.fcn_32s = fcn_32s
         self.fcn_16s = fcn_16s
         # Initialize convolutional layers and deconvolutional layer
-        self.softmax = Conv2D(3, 1, activation='softmax', padding='same')
+        self.convnets1 = tf.keras.Sequential()
+        self.convnets2 = tf.keras.Sequential()
+        self.convnets3 = tf.keras.Sequential()
+        self.softmax = tf.keras.Sequential()
+
+        self.convnets1.add(Conv2D(32, 3, activation='relu', padding='same'))
+        self.convnets1.add(Conv2D(32, 3, activation='relu', padding='same'))
+        self.convnets1.add(tf.keras.layers.MaxPooling2D())
+        self.convnets1.add(Conv2D(64, 3, activation='relu', padding='same'))
+        self.convnets1.add(Conv2D(64, 3, activation='relu', padding='same'))
+        self.convnets1.add(tf.keras.layers.MaxPooling2D())
 		
-    def vgg16_base(self):
-        #input_layer = tf.keras.Input(shape=(256, 256, 3), name="input")
-        vgg16 = tf.keras.Sequential()
+        self.convnets2.add(Conv2D(128, 3, activation='relu', padding='same'))
+        self.convnets2.add(Conv2D(128, 3, activation='relu', padding='same'))
+        self.convnets2.add(tf.keras.layers.MaxPooling2D())  
+        self.convnets2.add(Conv2D(256, 3, activation='relu', padding='same'))
+        self.convnets2.add(Conv2D(256, 3, activation='relu', padding='same'))
+        self.convnets2.add(tf.keras.layers.MaxPooling2D())
+        
+        self.convnets3.add(Conv2D(512, 3, activation='relu', padding='same'))
+        self.convnets3.add(Conv2D(512, 3, activation='relu', padding='same'))
+        self.convnets3.add(tf.keras.layers.MaxPooling2D())
+        self.convnets3.add(Conv2D(512, 1, activation='relu', padding='same'))
+        self.convnets3.add(Dropout(0.5))
 
-        vgg16.add(Conv2D(64, 3, activation='relu', padding='same', input_shape=(256, 256, 3), name='conv11'))
-        vgg16.add(Conv2D(64, 3, activation='relu', padding='same', name='conv12'))
-        vgg16.add(tf.keras.layers.MaxPooling2D())
-        vgg16.add(Conv2D(128, 3, activation='relu', padding='same', name='conv21'))
-        vgg16.add(Conv2D(128, 3, activation='relu', padding='same', name='conv22'))
-        vgg16.add(tf.keras.layers.MaxPooling2D())
-        vgg16.add(Conv2D(256, 3, activation='relu', padding='same', name='conv31'))
-        vgg16.add(Conv2D(256, 3, activation='relu', padding='same', name='conv32'))
-        vgg16.add(Conv2D(256, 3, activation='relu', padding='same', name='conv33'))
-        vgg16.add(tf.keras.layers.MaxPooling2D(name='pool3'))
-    
-        vgg16.add(Conv2D(512, 3, activation='relu', padding='same', name='conv41'))
-        vgg16.add(Conv2D(512, 3, activation='relu', padding='same', name='conv42'))
-        vgg16.add(Conv2D(512, 3, activation='relu', padding='same', name='conv43'))
-        vgg16.add(tf.keras.layers.MaxPooling2D(name='pool4'))
-       
-        vgg16.add(Conv2D(512, 3, activation='relu', padding='same', name='conv51'))
-        vgg16.add(Conv2D(512, 3, activation='relu', padding='same', name='conv52'))
-        vgg16.add(Conv2D(512, 3, activation='relu', padding='same', name='conv53'))
-        vgg16.add(tf.keras.layers.MaxPooling2D())
-        vgg16.add(Conv2D(4096, 7, activation='relu', padding='same', name='dense1'))
-        vgg16.add(Dropout(0.2))
-        vgg16.add(Conv2D(4096, 1, activation='relu', padding='same', name='dense2')) 
-        vgg16.add(Dropout(0.2, name='conv7'))
-
-        vgg16.add(Conv2D(1000, 1, activation='relu', padding='same', name='pred'))
-        #output = vgg16(input_layer)
-        return tf.keras.Model(vgg16.input, vgg16.output)
-   
-    def Model(self, vgg16):   
-        vgg16Output = vgg16.get_layer('conv7').output
-        vgg16pool4 = vgg16.get_layer('pool4').output
-        vgg16pool3 = vgg16.get_layer('pool3').output
-        if self.fcn_32s:
-            predict1 = Conv2D(3, 1, activation='relu', padding='same')(vgg16Output)
-            FCNoutput = Conv2DTranspose(3, 64, 32, padding='same')(predict1)		
-        elif self.fcn_16s:
-            predict1 = Conv2D(3, 1, activation='relu', padding='same')(vgg16Output)
-            predict1 = Conv2DTranspose(3, 4, 2, padding='same')(predict1)
-            convout2 = Conv2D(3, 1, activation='relu', padding='same')(vgg16pool4)
-            FCNoutput = tf.add(predict1, convout2)
-            FCNoutput = Conv2DTranspose(3, 32, 16, padding='same')(FCNoutput)
-        else:
-            predict1 = Conv2D(3, 1, activation='relu', padding='same')(vgg16Output)
-            predict1 = Conv2DTranspose(3, 4, 2, padding='same')(predict1)
-            convout2 = Conv2D(3, 1, activation='relu', padding='same')(vgg16pool4)
-            FCNoutput = tf.add(predict1, convout2)
-            FCNoutput = Conv2DTranspose(3, 4, 2, padding='same')(FCNoutput)
-            convout1 = Conv2D(3, 1, activation='relu', padding='same')(vgg16pool3)
-            FCNoutput = tf.add(FCNoutput, convout1)
-            FCNoutput = Conv2DTranspose(3, 16, 8, padding='same')(FCNoutput)
-        FCNoutput = self.softmax(FCNoutput)
-        return tf.keras.Model(vgg16.input, FCNoutput)	
+        self.softmax.add(Conv2D(3, 1, activation='softmax', padding='same'))
 
     def call(self, inputs):
         """
@@ -101,79 +60,81 @@ class FCN(tf.keras.Model):
         :param inputs: images, shape of (num_inputs, 256, 256, 1)
         :return: logits - Flatten predictied image, a matrix of shape (num_inputs, 256*256)
         """
-        base_model = self.vgg16_base()
-        FCNmodel = self.Model(base_model)
-        FCNmodel.get_layer('conv11').trainable=False
-        FCNmodel.get_layer('conv12').trainable=False
-        FCNmodel.get_layer('conv21').trainable=False
-        FCNmodel.get_layer('conv22').trainable=False
-        FCNmodel.get_layer('conv31').trainable=False
-        FCNmodel.get_layer('conv32').trainable=False
-        FCNmodel.get_layer('conv33').trainable=False
-        FCNmodel.get_layer('conv41').trainable=False
-        FCNmodel.get_layer('conv42').trainable=False
-        FCNmodel.get_layer('conv43').trainable=False
-        FCNmodel.get_layer('conv51').trainable=False
-        FCNmodel.get_layer('conv52').trainable=False
-        FCNmodel.get_layer('conv53').trainable=False
-        FCNmodel.get_layer('dense1').trainable=False
-        FCNmodel.get_layer('dense2').trainable=False
-        prbs = FCNmodel(inputs)
+        convout1 = self.convnets1(inputs)
+        convout2 = self.convnets2(convout1)
+        convout3 = self.convnets3(convout2)
+
+        if self.fcn_32s:
+            FCNoutput = Conv2DTranspose(32, 64, 32, padding='same')(convout3)
+        elif self.fcn_16s:
+            predict1 = UpSampling2D()(convout3)
+            predict1 = Conv2D(256, 3, activation='relu', padding='same')(predict1)
+            convout2 = Conv2D(256, 3, activation='relu', padding='same')(convout2)
+            FCNoutput = tf.add(predict1, convout2)
+            FCNoutput = Conv2D(128, 3, activation='relu', padding='same')(FCNoutput)
+            FCNoutput = Conv2DTranspose(128, 32, 16, padding='same')(FCNoutput)
+        else:
+            predict1 = Conv2DTranspose(256, 4, 2, padding='same')(convout3)
+            predict1 = Conv2D(256, 1, activation='relu', padding='same')(predict1)
+            convout2 = Conv2D(256, 1, activation='relu', padding='same')(convout2)
+            FCNoutput = tf.add(predict1, convout2)
+            FCNoutput = Conv2DTranspose(128, 4, 2, padding='same')(FCNoutput)
+            FCNoutput = Conv2D(128, 1, activation='relu', padding='same')(FCNoutput)
+            convout1 = Conv2D(128, 1, activation='relu', padding='same')(convout1)
+            FCNoutput = tf.add(FCNoutput, convout1)
+            FCNoutput = Conv2DTranspose(64, 4, 2, padding='same')(FCNoutput)
+            FCNoutput = Conv2D(64, 1, activation='relu', padding='same')(FCNoutput)
+            FCNoutput = Conv2D(64, 1, activation='relu', padding='same')(FCNoutput)
+            FCNoutput = Conv2DTranspose(64, 4, 2, padding='same')(FCNoutput)
+            FCNoutput = Conv2D(32, 3, activation='relu', padding='same')(FCNoutput)
+            FCNoutput = Conv2DTranspose(32, 4, 2, padding='same')(FCNoutput)
+            FCNoutput = Conv2D(32, 3, activation='relu', padding='same')(FCNoutput)
+
+        prbs = self.softmax(FCNoutput)
 
         return prbs
- 
-    def loss(self, probs, labels):
+
+    def loss(self, prbs, labels):
         """
         Calculates the model cross-entropy loss after one forward pass.
-        :param probs: a matrix of shape (batch_size, 256, 256, 3)
-        :param labels: during training, matrix of shape (batch_size, 256, 256) containing the train labels
+        Softmax is applied in this function.
+        :param logits: during training, a matrix of shape (batch_size, self.num_classes)
+        containing the result of multiple convolution and feed forward layers
+        :param labels: during training, matrix of shape (batch_size, self.num_classes) containing the train labels
+        :param labels: during training, list of length 3 containing the weight for each cluster according to the count of 0, 1, 2 in training set
         :return: the loss of the model as a Tensor
         """
 
-        labels = tf.cast(labels, tf.int32)
-
-        class_weights = tf.constant([1, 3, 3])
+        #class_weights = tf.constant([tf_count(labels, 0), tf_count(labels, 1), tf_count(labels, 2)])
+        class_weights = tf.constant([1,3,3])
+        #class_weights = class_weights / tf.reduce_sum(class_weights)
+        #class_weights = tf.exp(-class_weights)
         class_weights = class_weights / tf.reduce_sum(class_weights)
+        #print(class_weights)
         sample_weights = tf.gather(class_weights, indices=tf.cast(labels, tf.int32))
 
-        loss = SparseCategoricalCrossentropy()(labels, probs, sample_weights)
-        #print(tf.reduce_mean(loss))
+        loss = SparseCategoricalCrossentropy()(labels, prbs, sample_weights)
+
         return tf.reduce_mean(loss)
 
-
-class BilinearInitializer(tf.keras.initializers.Initializer):
-    '''Initializer for Conv2DTranspose to perform bilinear interpolation on each channel.'''
-    def __call__(self, shape, dtype=None, **kwargs):
-        kernel_size, _, filters, _ = shape
-        arr = np.zeros((kernel_size, kernel_size, filters, filters))
-        ## make filter that performs bilinear interpolation through Conv2DTranspose
-        upscale_factor = (kernel_size+1)//2
-        if kernel_size % 2 == 1:
-            center = upscale_factor - 1
-        else:
-            center = upscale_factor - 0.5
-        og = np.ogrid[:kernel_size, :kernel_size]
-        kernel = (1-np.abs(og[0]-center)/upscale_factor) * \
-                 (1-np.abs(og[1]-center)/upscale_factor) # kernel shape is (kernel_size, kernel_size)
-        for i in range(filters):
-            arr[..., i, i] = kernel
-        return tf.convert_to_tensor(arr, dtype=dtype)
-
-
 def train(model, train_inputs, train_labels):
-    """
+    '''
+    Trains the model on all of the inputs and labels for one epoch. You should shuffle your inputs
+    and labels - ensure that they are shuffled in the same order using tf.gather or zipping.
+    To increase accuracy, you may want to use tf.image.random_flip_left_right on your
+    inputs before doing the forward pass. You should batch your inputs.
     :param model: the initialized model to use for the forward pass and backward pass
     :param train_inputs: train inputs (all inputs to use for training),
-    shape (num_inputs, 256, 256, 1)
+    shape (num_inputs, width, height, num_channels)
     :param train_labels: train labels (all labels to use for training),
-    shape (num_labels, 256, 256)
-    :return: list of losses per batch
-    """
+    shape (num_labels, num_classes)
+    :return: Optionally list of losses per batch to use for visualize_loss
+    '''
 
     batch_size = model.batch_size
     n_batch = math.ceil(len(train_inputs) / batch_size)
 
-    model.loss_list = []
+    loss_list = []
 
     for i in range(n_batch):
         starting_index = i * batch_size
@@ -183,12 +144,13 @@ def train(model, train_inputs, train_labels):
         with tf.GradientTape() as tape:
             probs = model(batch_inputs)
             loss = model.loss(probs, batch_labels)
-            model.loss_list.append(loss)
+            #print(loss)
+            loss_list.append(loss.numpy())
 
         gradients = tape.gradient(loss, model.trainable_variables)
         model.optimizer.apply_gradients(zip(gradients, model.trainable_variables))
 
-    return None
+    return loss_list
 
 
 def test(model, test_inputs, test_labels):
@@ -221,44 +183,25 @@ def test(model, test_inputs, test_labels):
     return iou / len(test_inputs), acc / len(test_inputs), mean_acc / len(test_inputs)
 
 
-def main(arg = None):
-
-    inputs, train_labels = get_data('train_img_r.npy', 'train_lab_r.npy', arg)
-    train_inputs = np.zeros((inputs.shape[0], 256, 256, 3))
-    train_inputs[:, :, :, 0] = inputs
-    train_inputs[:, :, :, 1] = inputs
-    train_inputs[:, :, :, 2] = inputs
-    train_inputs = tf.convert_to_tensor(train_inputs)
-    inputs, test_labels = get_data('test_img_r.npy', 'test_lab_r.npy')
-    test_inputs = np.zeros((inputs.shape[0], 256, 256, 3))
-    test_inputs[:, :, :, 0] = inputs
-    test_inputs[:, :, :, 1] = inputs
-    test_inputs[:, :, :, 2] = inputs
-    test_inputs = tf.convert_to_tensor(test_inputs)
+def main(arg=None):
+    train_inputs, train_labels = get_data('train_img_r.npy', 'train_lab_r.npy', arg)
+    train_inputs = tf.reshape(train_inputs, (train_inputs.shape[0], 256, 256, 1))
+    test_inputs, test_labels = get_data('test_img_r.npy', 'test_lab_r.npy')
+    test_inputs = tf.reshape(test_inputs, (test_inputs.shape[0], 256, 256, 1))
 
     # create model
-
-
     model = FCN()
-    #base_model = self.vgg16_base()
-    vgg16 = tf.keras.applications.vgg16.VGG16(weights='imagenet')
-    weight_list = vgg16.get_weights()
-    weight_list[26] = weight_list[26].reshape(7, 7, 512, 4096)
-    weight_list[28] = weight_list[28].reshape(1, 1, 4096, 4096)
-    weight_list[30] = weight_list[30].reshape(1, 1, 4096, 1000)
-    model.vgg16_base().set_weights(weight_list)
-    del weight_list	
-
 
     # train
     for i in range(50):
-        train(model, train_inputs, train_labels)
-        print(f'Train Epoch: {i}  Loss: {np.mean(model.loss_list):.6f}')
+        loss_list = train(model, train_inputs, train_labels)
+        print(f"Train Epoch: {i}  Loss: {np.mean(loss_list):.6f}")
         iou, acc, mean_acc = test(model, test_inputs, test_labels)
-        print(f'--IoU: {iou:.6f}  --pixel accuracy: {acc:.6f}  --mean pixel accuracy: {mean_acc:.6f}')
+        print(f"--IoU: {iou:.6f}  --pixel accuracy: {acc:.6f}  --mean pixel accuracy: {mean_acc:.6f}")
 
         if (i + 1) % 10 == 0:
-            show_seg(model, test_inputs[:10], test_labels[:10], 'fcn_add' + arg + str(i + 1))
+            show_seg(model, test_inputs[:10], test_labels[:10], 'fcn' + arg + str(i + 1))
+
 
 if __name__ == '__main__':
     main('None')

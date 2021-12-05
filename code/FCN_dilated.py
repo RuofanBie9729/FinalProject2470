@@ -65,14 +65,14 @@ class FCN(tf.keras.Model):
         convout3 = self.convnets3(convout2)
 
         if self.fcn_32s:
-            FCNoutput = Conv2DTranspose(3, 64, 32, padding='same')(convout3)
+            FCNoutput = Conv2DTranspose(32, 64, 32, padding='same')(convout3)
         elif self.fcn_16s:
             predict1 = UpSampling2D()(convout3)
-            predict1 = Conv2D(3, 3, activation='relu', padding='same')(predict1)
-            convout2 = Conv2D(3, 3, activation='relu', padding='same')(convout2)
-            FCNoutput = tf.concat([predict1, convout2], -1)
-            FCNoutput = Conv2D(3, 3, activation='relu', padding='same')(FCNoutput)
-            FCNoutput = Conv2DTranspose(3, 32, 16, padding='same')(FCNoutput)
+            predict1 = Conv2D(256, 3, activation='relu', padding='same')(predict1)
+            convout2 = Conv2D(256, 3, activation='relu', padding='same')(convout2)
+            FCNoutput = tf.add(predict1, convout2)
+            FCNoutput = Conv2D(128, 3, activation='relu', padding='same')(FCNoutput)
+            FCNoutput = Conv2DTranspose(128, 32, 16, padding='same')(FCNoutput)
         else:
             predict1 = Conv2DTranspose(256, 4, 2, padding='same')(convout3)
             predict1 = Conv2D(256, 1, activation='relu', padding='same')(predict1)

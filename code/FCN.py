@@ -258,10 +258,10 @@ def main(arg = None):
         print(f'--IoU: {iou:.6f}  --pixel accuracy: {acc:.6f}  --mean pixel accuracy: {mean_acc:.6f}')
 
         if (i + 1) % 10 == 0:
-            show_seg(model, test_inputs[:10], test_labels[:10], 'deconvnet_both' + str(i + 1))
+            show_seg(model, test_inputs[:10], test_labels[:10], 'fcn_add' + arg + str(i + 1))
 
 if __name__ == '__main__':
-    main()
+    main('None')
     main('both')
     main('flip')
     main('rotate')

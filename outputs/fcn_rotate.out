@@ -1,0 +1,100 @@
+Train Epoch: 0  Loss: 0.160082
+--IoU: 0.320465  --pixel accuracy: 0.961394  --mean pixel accuracy: 0.333333
+Train Epoch: 1  Loss: 0.153640
+--IoU: 0.320465  --pixel accuracy: 0.961394  --mean pixel accuracy: 0.333333
+Train Epoch: 2  Loss: 0.141191
+--IoU: 0.290004  --pixel accuracy: 0.849944  --mean pixel accuracy: 0.335816
+Train Epoch: 3  Loss: 0.055833
+--IoU: 0.316235  --pixel accuracy: 0.944694  --mean pixel accuracy: 0.330795
+Train Epoch: 4  Loss: 0.029392
+--IoU: 0.318420  --pixel accuracy: 0.955195  --mean pixel accuracy: 0.331225
+Train Epoch: 5  Loss: 0.021331
+--IoU: 0.319483  --pixel accuracy: 0.958432  --mean pixel accuracy: 0.332317
+Train Epoch: 6  Loss: 0.018993
+--IoU: 0.319857  --pixel accuracy: 0.959550  --mean pixel accuracy: 0.332700
+Train Epoch: 7  Loss: 0.016987
+--IoU: 0.320089  --pixel accuracy: 0.960268  --mean pixel accuracy: 0.332942
+Train Epoch: 8  Loss: 0.016558
+--IoU: 0.320177  --pixel accuracy: 0.960530  --mean pixel accuracy: 0.333035
+Train Epoch: 9  Loss: 0.016121
+--IoU: 0.320204  --pixel accuracy: 0.960611  --mean pixel accuracy: 0.333063
+Train Epoch: 10  Loss: 0.015945
+--IoU: 0.320267  --pixel accuracy: 0.960800  --mean pixel accuracy: 0.333126
+Train Epoch: 11  Loss: 0.015594
+--IoU: 0.320327  --pixel accuracy: 0.960982  --mean pixel accuracy: 0.333190
+Train Epoch: 12  Loss: 0.015310
+--IoU: 0.320376  --pixel accuracy: 0.961129  --mean pixel accuracy: 0.333241
+Train Epoch: 13  Loss: 0.015044
+--IoU: 0.320479  --pixel accuracy: 0.961247  --mean pixel accuracy: 0.333357
+Train Epoch: 14  Loss: 0.014955
+--IoU: 0.320371  --pixel accuracy: 0.961112  --mean pixel accuracy: 0.333234
+Train Epoch: 15  Loss: 0.014750
+--IoU: 0.320435  --pixel accuracy: 0.961306  --mean pixel accuracy: 0.333303
+Train Epoch: 16  Loss: 0.014694
+--IoU: 0.320428  --pixel accuracy: 0.961283  --mean pixel accuracy: 0.333295
+Train Epoch: 17  Loss: 0.014338
+--IoU: 0.320450  --pixel accuracy: 0.961350  --mean pixel accuracy: 0.333318
+Train Epoch: 18  Loss: 0.014289
+--IoU: 0.320452  --pixel accuracy: 0.961355  --mean pixel accuracy: 0.333320
+Train Epoch: 19  Loss: 0.014115
+--IoU: 0.320457  --pixel accuracy: 0.961371  --mean pixel accuracy: 0.333325
+Train Epoch: 20  Loss: 0.014032
+--IoU: 0.320457  --pixel accuracy: 0.961370  --mean pixel accuracy: 0.333325
+Train Epoch: 21  Loss: 0.013743
+--IoU: 0.326778  --pixel accuracy: 0.961998  --mean pixel accuracy: 0.339496
+Train Epoch: 22  Loss: 0.013584
+--IoU: 0.373770  --pixel accuracy: 0.966431  --mean pixel accuracy: 0.390076
+Train Epoch: 23  Loss: 0.013444
+--IoU: 0.409535  --pixel accuracy: 0.969448  --mean pixel accuracy: 0.435349
+Train Epoch: 24  Loss: 0.013243
+--IoU: 0.439030  --pixel accuracy: 0.971512  --mean pixel accuracy: 0.482672
+Train Epoch: 25  Loss: 0.013124
+--IoU: 0.454266  --pixel accuracy: 0.971718  --mean pixel accuracy: 0.517710
+Train Epoch: 26  Loss: 0.012900
+--IoU: 0.461448  --pixel accuracy: 0.972001  --mean pixel accuracy: 0.532385
+Train Epoch: 27  Loss: 0.012781
+--IoU: 0.457138  --pixel accuracy: 0.971843  --mean pixel accuracy: 0.530404
+Train Epoch: 28  Loss: 0.012688
+--IoU: 0.468324  --pixel accuracy: 0.971959  --mean pixel accuracy: 0.556784
+Train Epoch: 29  Loss: 0.012750
+--IoU: 0.463268  --pixel accuracy: 0.968476  --mean pixel accuracy: 0.579353
+Train Epoch: 30  Loss: 0.012600
+--IoU: 0.474107  --pixel accuracy: 0.971476  --mean pixel accuracy: 0.580295
+Train Epoch: 31  Loss: 0.012265
+--IoU: 0.471010  --pixel accuracy: 0.969041  --mean pixel accuracy: 0.600922
+Train Epoch: 32  Loss: 0.012188
+--IoU: 0.469218  --pixel accuracy: 0.969179  --mean pixel accuracy: 0.599262
+Train Epoch: 33  Loss: 0.012168
+--IoU: 0.467799  --pixel accuracy: 0.967825  --mean pixel accuracy: 0.596623
+Train Epoch: 34  Loss: 0.012213
+--IoU: 0.471981  --pixel accuracy: 0.969880  --mean pixel accuracy: 0.596382
+Train Epoch: 35  Loss: 0.011883
+--IoU: 0.466570  --pixel accuracy: 0.967284  --mean pixel accuracy: 0.607770
+Train Epoch: 36  Loss: 0.011813
+--IoU: 0.464920  --pixel accuracy: 0.967359  --mean pixel accuracy: 0.606903
+Train Epoch: 37  Loss: 0.011700
+--IoU: 0.470329  --pixel accuracy: 0.968319  --mean pixel accuracy: 0.610060
+Train Epoch: 38  Loss: 0.011667
+--IoU: 0.468785  --pixel accuracy: 0.967892  --mean pixel accuracy: 0.611814
+Train Epoch: 39  Loss: 0.011593
+--IoU: 0.470924  --pixel accuracy: 0.968271  --mean pixel accuracy: 0.613000
+Train Epoch: 40  Loss: 0.011478
+--IoU: 0.474557  --pixel accuracy: 0.970148  --mean pixel accuracy: 0.607016
+Train Epoch: 41  Loss: 0.012068
+--IoU: 0.454832  --pixel accuracy: 0.964237  --mean pixel accuracy: 0.563329
+Train Epoch: 42  Loss: 0.011681
+--IoU: 0.469384  --pixel accuracy: 0.967997  --mean pixel accuracy: 0.614702
+Train Epoch: 43  Loss: 0.011266
+--IoU: 0.469143  --pixel accuracy: 0.968715  --mean pixel accuracy: 0.605158
+Train Epoch: 44  Loss: 0.011144
+--IoU: 0.470378  --pixel accuracy: 0.968891  --mean pixel accuracy: 0.605942
+Train Epoch: 45  Loss: 0.011096
+--IoU: 0.472787  --pixel accuracy: 0.969857  --mean pixel accuracy: 0.607130
+Train Epoch: 46  Loss: 0.011027
+--IoU: 0.472497  --pixel accuracy: 0.970147  --mean pixel accuracy: 0.596700
+Train Epoch: 47  Loss: 0.010956
+--IoU: 0.474144  --pixel accuracy: 0.970356  --mean pixel accuracy: 0.605542
+Train Epoch: 48  Loss: 0.010852
+--IoU: 0.470267  --pixel accuracy: 0.969093  --mean pixel accuracy: 0.601987
+Train Epoch: 49  Loss: 0.010797
+--IoU: 0.468806  --pixel accuracy: 0.969019  --mean pixel accuracy: 0.597827
